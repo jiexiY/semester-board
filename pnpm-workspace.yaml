@@ -1,0 +1,24 @@
+allowBuilds:
+  '@swc/core': true
+  cbor-extract: true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@workflow/astro@4.0.20'
+  - '@workflow/builders@4.1.10'
+  - '@workflow/cli@4.3.9'
+  - '@workflow/core@4.8.5'
+  - '@workflow/nest@4.0.21'
+  - '@workflow/next@4.1.9'
+  - '@workflow/nitro@4.1.11'
+  - '@workflow/nuxt@4.0.21'
+  - '@workflow/rollup@4.0.20'
+  - '@workflow/sveltekit@4.0.20'
+  - '@workflow/vite@4.0.20'
+  - '@workflow/web@4.1.21'
+  - '@workflow/world-local@4.4.0'
+  - '@workflow/world-vercel@4.7.1'
+  - '@workflow/world@4.5.0'
+  - workflow@4.8.5
+overrides:
+  'nanoid@>=4.0.0 <5.1.16': 5.1.16
+  'undici@>=7.0.0 <7.29.0': 7.29.0

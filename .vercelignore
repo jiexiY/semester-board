@@ -1,0 +1,9 @@
+concepts
+qa
+node_modules
+dist
+scripts
+tests
+.env*
+.vercel
+*.log

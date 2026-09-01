@@ -1,0 +1,29 @@
+{
+  "name": "fall-2026-quest",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "vite build",
+    "build:offline": "vite build --mode offline && node scripts/inline-build.mjs",
+    "test": "node --test --test-isolation=none tests/*.test.js"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.112.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "ai": "^7.0.79",
+    "mammoth": "^1.12.2",
+    "nitro": "3.0.260610-beta",
+    "pdfjs-dist": "^6.3.289",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "vite": "^8.2.2",
+    "web-push": "^3.6.7",
+    "workflow": "4.8.5"
+  }
+}

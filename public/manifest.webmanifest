@@ -1,0 +1,19 @@
+{
+  "name": "Semester Board",
+  "short_name": "Semester Board",
+  "description": "A personal semester dashboard with optional cloud chat and closed-tab reminders.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#f5f7fb",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
