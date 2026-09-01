@@ -6,4 +6,5 @@ scripts
 tests
 .env*
 .vercel
+.private
 *.log
