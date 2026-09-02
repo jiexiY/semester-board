@@ -71,7 +71,7 @@ function noticeTone(notice) {
     : "notice";
 }
 
-export default function CloudAccountGate({ account, localProfiles = [], onUseLocal }) {
+export default function CloudAccountGate({ account, localProfiles = [], onUseLocal, productName = "Semester Board", productDescription = "Use one private account to keep your semester board available across your devices.", privacyDescription = "Dashboard state, assistant histories, and syllabus files sync to private Supabase storage for this account. Notification permission and subscription, AI consent, and Study Deck session and selected media stay on this device." }) {
   const [mode, setMode] = useState("signin");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -185,15 +185,15 @@ export default function CloudAccountGate({ account, localProfiles = [], onUseLoc
         <header className="profile-gate-brand">
           <span className="profile-gate-mark"><Icon name="lock" size={26} /></span>
           <div>
-            <h1 id={titleId}>Semester Board</h1>
-            <p>Semester Board</p>
+            <h1 id={titleId}>{productName}</h1>
+            <p>{productName}</p>
           </div>
         </header>
 
         <div className="profile-gate-copy">
           <h2>
             {mode === "signin"
-              ? "Sign in to Semester Board"
+              ? `Sign in to ${productName}`
               : mode === "create"
                 ? "Create your account"
                 : "Check your email"}
@@ -201,7 +201,7 @@ export default function CloudAccountGate({ account, localProfiles = [], onUseLoc
           <p>
             {mode === "confirmation"
               ? `We sent a confirmation link to ${confirmationEmail}. Open it to finish creating your account.`
-              : "Use one private account to keep your semester board available across your devices."}
+              : productDescription}
           </p>
         </div>
 
@@ -359,7 +359,7 @@ export default function CloudAccountGate({ account, localProfiles = [], onUseLoc
 
         <aside className="profile-gate-privacy">
           <Icon name="shield" size={18} />
-          <p><strong>Cloud account.</strong> Dashboard state, assistant histories, and syllabus files sync to private Supabase storage for this account. Notification permission and subscription, AI consent, and Study Deck session and selected media stay on this device.</p>
+          <p><strong>Cloud account.</strong> {privacyDescription}</p>
         </aside>
       </section>
     </main>

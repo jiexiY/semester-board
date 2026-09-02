@@ -24,7 +24,203 @@
 /* Study deck ------------------------------------------------------------- */
 
 .page-switcher {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.solo-study-deck-app {
+  position: relative;
+  display: grid;
+  width: min(100%, 1680px);
+  height: 100dvh;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  margin: 0 auto;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.solo-study-deck-topbar {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  min-width: 0;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+}
+
+.solo-study-deck-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+  color: #0b1f3a;
+  text-decoration: none;
+}
+
+.solo-study-deck-brand > span {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 15px;
+  color: #fff;
+  background: linear-gradient(145deg, #0878ff, #6447df);
+  box-shadow: 0 11px 24px rgba(37, 86, 182, 0.24);
+}
+
+.solo-study-deck-brand > div {
+  display: grid;
+  gap: 2px;
+}
+
+.solo-study-deck-brand strong {
+  font-size: 18px;
+  letter-spacing: -0.025em;
+}
+
+.solo-study-deck-brand small {
+  color: #68768c;
+  font-size: 10px;
+}
+
+.solo-study-deck-account {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.solo-study-deck-account > a,
+.solo-study-deck-account > button,
+.solo-study-deck-ai > button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(67, 91, 128, 0.14);
+  border-radius: 12px;
+  color: #25425f;
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.solo-study-deck-account > a {
+  display: inline-flex;
+  align-items: center;
+}
+
+.solo-study-deck-stage {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: max-content minmax(0, 1fr);
+  align-content: start;
+  overflow: hidden;
+}
+
+.solo-study-deck-stage > main {
+  height: 100%;
+  margin-top: 0;
+}
+
+.solo-study-deck-ai {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  padding: 11px 13px;
+  border: 1px solid rgba(125, 96, 31, 0.13);
+  border-radius: 16px;
+  color: #65502e;
+  background: rgba(255, 248, 229, 0.78);
+  box-shadow: var(--shadow-soft);
+}
+
+.solo-study-deck-ai.is-ready {
+  border-color: rgba(28, 119, 83, 0.13);
+  color: #245d48;
+  background: rgba(235, 252, 244, 0.8);
+}
+
+.solo-study-deck-ai > div {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.solo-study-deck-ai svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.solo-study-deck-ai p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.solo-study-deck-loading {
+  margin: 0;
+  padding: 24px;
+  color: #61738d;
+}
+
+@media (max-width: 760px) {
+  .solo-study-deck-app {
+    height: auto;
+    min-height: 100dvh;
+    padding: 9px;
+    overflow: visible;
+  }
+
+  .solo-study-deck-topbar,
+  .solo-study-deck-account,
+  .solo-study-deck-ai {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .solo-study-deck-account {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .solo-study-deck-account .saved-status {
+    grid-column: 1 / -1;
+  }
+
+  .solo-study-deck-account > a,
+  .solo-study-deck-account > button,
+  .solo-study-deck-ai > button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .solo-study-deck-stage {
+    overflow: visible;
+  }
+
+  .solo-study-deck-stage > main {
+    height: auto;
+    overflow: visible;
+  }
 }
 
 /* Assignment deck -------------------------------------------------------- */

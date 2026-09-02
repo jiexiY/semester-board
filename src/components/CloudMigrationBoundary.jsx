@@ -15,7 +15,7 @@ function migrationError(error) {
     : "Cloud migration did not finish. Your device-only profile was not changed.";
 }
 
-export default function CloudMigrationBoundary({ account, children, localProfiles = [] }) {
+export default function CloudMigrationBoundary({ account, children, localProfiles = [], productName = "Semester Board", productSubtitle = "Private course workspace" }) {
   const cloudSync = useCloudSync();
   const [dismissed, setDismissed] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState(() => preferredLocalProfileId(localProfiles));
@@ -93,7 +93,7 @@ export default function CloudMigrationBoundary({ account, children, localProfile
       <section className="profile-gate-card">
         <header className="profile-gate-brand">
           <span className="profile-gate-mark"><Icon name="upload" size={26} /></span>
-          <div><h1>Semester Board</h1><p>Private course workspace</p></div>
+          <div><h1>{productName}</h1><p>{productSubtitle}</p></div>
         </header>
 
         {cloudSync.hasRemoteData ? (

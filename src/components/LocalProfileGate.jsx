@@ -12,14 +12,14 @@ function readableError(error) {
     : "That local profile action could not be completed.";
 }
 
-export function LocalProfileRestoring({ profileName }) {
+export function LocalProfileRestoring({ profileName, productName = "Semester Board", productSubtitle = "Private course workspace" }) {
   const titleId = useId();
   return (
     <main className="profile-gate" aria-labelledby={titleId}>
       <section className="profile-gate-card">
         <header className="profile-gate-brand">
           <span className="profile-gate-mark"><Icon name="lock" size={26} /></span>
-          <div><h1 id={titleId}>Semester Board</h1><p>Private course workspace</p></div>
+          <div><h1 id={titleId}>{productName}</h1><p>{productSubtitle}</p></div>
         </header>
         <div className="profile-gate-copy" aria-live="polite" role="status">
           <h2>Restoring {profileName || "your local profile"}…</h2>
@@ -30,7 +30,7 @@ export function LocalProfileRestoring({ profileName }) {
   );
 }
 
-export default function LocalProfileGate({ createProfile, notice, profiles, signIn }) {
+export default function LocalProfileGate({ createProfile, notice, profiles, signIn, productName = "Semester Board", profileDescription = "Profiles remember each person’s attendance, progress, syllabi, and assistant history on this browser." }) {
   const [mode, setMode] = useState(() => (profiles.length ? "signin" : "create"));
   const [selectedProfileId, setSelectedProfileId] = useState(() => preferredLocalProfileId(profiles));
   const [name, setName] = useState("");
@@ -94,14 +94,14 @@ export default function LocalProfileGate({ createProfile, notice, profiles, sign
         <header className="profile-gate-brand">
           <span className="profile-gate-mark"><Icon name="lock" size={26} /></span>
           <div>
-            <h1 id={titleId}>Semester Board</h1>
-            <p>Semester Board</p>
+            <h1 id={titleId}>{productName}</h1>
+            <p>{productName}</p>
           </div>
         </header>
 
         <div className="profile-gate-copy">
           <h2>{mode === "signin" ? "Log in to your saved profile" : "Create a local profile"}</h2>
-          <p>Profiles remember each person’s attendance, progress, syllabi, and assistant history on this browser.</p>
+          <p>{profileDescription}</p>
         </div>
 
         {notice ? <p className="profile-gate-error" role="alert"><Icon name="warning" size={16} />{notice}</p> : null}

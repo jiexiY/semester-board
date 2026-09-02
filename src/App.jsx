@@ -18,6 +18,7 @@ import TaskLegend from "./components/TaskLegend";
 import { useDashboardState } from "./hooks/useDashboardState";
 import { useAssistant } from "./hooks/useAssistant";
 import { useCloudAccount } from "./hooks/useCloudAccount";
+import { useCloudAssistant } from "./hooks/useCloudAssistant";
 import { useLocalProfile } from "./hooks/useLocalProfile";
 import { useStudySourceLibrary } from "./hooks/useStudySourceLibrary";
 import { useStudyGenerator } from "./hooks/useStudyGenerator";
@@ -172,8 +173,11 @@ function pageFromHash() {
   if (window.location.hash === "#attendance") return "attendance";
   if (window.location.hash === "#syllabi") return "syllabi";
   if (window.location.hash === "#assignments") return "assignments";
-  if (window.location.hash === "#study") return "study";
   return "semester";
+}
+
+function isStandaloneStudyDeckRoute() {
+  return window.location.pathname.replace(/\/+$/u, "") === "/study-deck";
 }
 
 const DASHBOARD_PAGES = [
@@ -181,7 +185,6 @@ const DASHBOARD_PAGES = [
   { id: "attendance", label: "Attendance", shortLabel: "Attendance", icon: "attendance" },
   { id: "syllabi", label: "Syllabi", shortLabel: "Syllabi", icon: "book" },
   { id: "assignments", label: "Assignment deck", shortLabel: "Tasks", icon: "document" },
-  { id: "study", label: "Study deck", shortLabel: "Study", icon: "target" },
 ];
 
 function PageSwitcher({ activePage, onChange }) {
@@ -245,6 +248,82 @@ function PrivateSemesterEmpty({ cloudMode, onImport }) {
   );
 }
 
+function SoloStudyDeck({ onSignOut, profile }) {
+  const cloudSync = useCloudSync();
+  const dashboard = useDashboardState(profile.id);
+  const cloudAssistant = useCloudAssistant(profile.id, {});
+  const { state } = dashboard;
+  const studySources = useStudySourceLibrary({
+    client: cloudSync?.client || null,
+    courseSpaceId: state.studyDeck?.selectedCourseSpaceId || null,
+    enabled: true,
+    profileId: profile.id,
+    sourceRevision: Number(state.studyDeck?.sourceRevisionByCourse?.[
+      state.studyDeck?.selectedCourseSpaceId
+    ] || 0),
+  });
+  const studyGenerator = useStudyGenerator({
+    aiStatus: cloudAssistant.status,
+    courseSpaceId: state.studyDeck?.selectedCourseSpaceId || null,
+    readSourceFile: studySources.readFile,
+  });
+
+  useEffect(() => {
+    void cloudAssistant.checkConsent();
+  }, [cloudAssistant.checkConsent]);
+
+  const signOut = async () => {
+    await cloudAssistant.endSessionConsent();
+    await onSignOut();
+  };
+
+  return (
+    <div className="solo-study-deck-app">
+      <header className="solo-study-deck-topbar">
+        <a className="solo-study-deck-brand" href="/study-deck" aria-label="Study Deck home">
+          <span><Icon name="target" size={22} /></span>
+          <div><strong>Study Deck</strong><small>Private source-grounded practice</small></div>
+        </a>
+        <div className="solo-study-deck-account">
+          <span className={`saved-status saved-status-${cloudSync?.status?.tone || "local"}`}><Icon name="shield" size={16} />{cloudSync?.status?.label || "Saved on this device"}</span>
+          <a href="/">Semester Board</a>
+          <button onClick={signOut} type="button">Sign out</button>
+        </div>
+      </header>
+
+      <div className="solo-study-deck-stage">
+        <CloudSyncConflictPanel />
+        {cloudAssistant.status === "needs-consent" ? (
+          <aside className="solo-study-deck-ai" role="status">
+            <div><Icon name="target" size={18} /><p><strong>AI generation is off.</strong> Browser-only generation still works. Enable AI only if you want bounded source excerpts sent to the configured provider when you generate.</p></div>
+            <button onClick={cloudAssistant.grantConsent} type="button">Enable AI generation</button>
+          </aside>
+        ) : null}
+        {cloudAssistant.status === "ready" ? (
+          <aside className="solo-study-deck-ai is-ready" role="status">
+            <div><Icon name="check" size={18} /><p><strong>AI generation is available.</strong> Original files remain private; generation still asks before sending bounded excerpts.</p></div>
+            <button onClick={cloudAssistant.revokeConsent} type="button">Turn off AI</button>
+          </aside>
+        ) : null}
+        <Suspense fallback={<p className="solo-study-deck-loading" role="status">Loading Study Deck…</p>}>
+          <StudyDeckPage
+            generationAccessStatus={cloudAssistant.status}
+            generationStatus={studyGenerator.status}
+            onAddSourceFiles={studySources.addFiles}
+            onGenerateStudyDeck={studyGenerator.generate}
+            onRemoveSourceFile={studySources.removeFile}
+            onStudyDeckState={dashboard.saveStudyDeck}
+            profileId={profile.id}
+            sourceLibrary={studySources.sources}
+            sourceUploadStatus={studySources.status}
+            studyDeckState={state.studyDeck}
+          />
+        </Suspense>
+      </div>
+    </div>
+  );
+}
+
 function SemesterDashboard({ onSignOut, profile }) {
   const cloudSync = useCloudSync();
   const dashboard = useDashboardState(profile.id);
@@ -257,15 +336,6 @@ function SemesterDashboard({ onSignOut, profile }) {
   const [activePage, setActivePage] = useState(pageFromHash);
   const [sheet, setSheet] = useState(null);
   const [toast, setToast] = useState(profile.notice || null);
-  const studySources = useStudySourceLibrary({
-    client: cloudSync?.client || null,
-    courseSpaceId: state.studyDeck?.selectedCourseSpaceId || null,
-    enabled: activePage === "study",
-    profileId: profile.id,
-    sourceRevision: Number(state.studyDeck?.sourceRevisionByCourse?.[
-      state.studyDeck?.selectedCourseSpaceId
-    ] || 0),
-  });
 
   const weeks = useMemo(() => (semesterReady ? buildTermWeeks(term) : []), [semesterReady, term]);
   const todayPosition = campusDayPosition(now);
@@ -350,11 +420,6 @@ function SemesterDashboard({ onSignOut, profile }) {
     scheduleEvents,
     syncMode: profile.syncMode,
   });
-  const studyGenerator = useStudyGenerator({
-    aiStatus: assistant.cloud.status,
-    courseSpaceId: state.studyDeck?.selectedCourseSpaceId || null,
-    readSourceFile: studySources.readFile,
-  });
 
   const handleSignOut = async () => {
     setToast("Signing out on this device…");
@@ -404,7 +469,7 @@ function SemesterDashboard({ onSignOut, profile }) {
   }, []);
 
   useEffect(() => {
-    if (!window.location.hash || ["#attendance", "#syllabi", "#assignments", "#study"].includes(window.location.hash)) return;
+    if (!window.location.hash || ["#attendance", "#syllabi", "#assignments"].includes(window.location.hash)) return;
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
   }, []);
 
@@ -612,27 +677,6 @@ function SemesterDashboard({ onSignOut, profile }) {
               onSetWorkStatus={setAssignmentWorkStatus}
               todayKey={todayKey}
             />
-          ) : activePage === "study" ? (
-            <Suspense
-              fallback={(
-                <div aria-labelledby="page-tab-study" id="study-page" role="tabpanel">
-                  <p role="status">Loading study deck…</p>
-                </div>
-              )}
-            >
-              <StudyDeckPage
-                generationAccessStatus={assistant.cloud.status}
-                generationStatus={studyGenerator.status}
-                onAddSourceFiles={studySources.addFiles}
-                onGenerateStudyDeck={studyGenerator.generate}
-                onRemoveSourceFile={studySources.removeFile}
-                onStudyDeckState={dashboard.saveStudyDeck}
-                profileId={profile.id}
-                sourceLibrary={studySources.sources}
-                sourceUploadStatus={studySources.status}
-                studyDeckState={state.studyDeck}
-              />
-            </Suspense>
           ) : null}
         </div>
       </div>
@@ -680,13 +724,18 @@ export default function App() {
   const localProfile = useLocalProfile();
   const cloudAccount = useCloudAccount();
   const [useLocalOnly, setUseLocalOnly] = useState(false);
+  const standaloneStudyDeck = isStandaloneStudyDeckRoute();
 
   useEffect(() => {
     void updateExistingServiceWorker(window.navigator);
   }, []);
 
+  useEffect(() => {
+    document.title = standaloneStudyDeck ? "Study Deck" : "Semester Board";
+  }, [standaloneStudyDeck]);
+
   if (cloudAccount.configured && !useLocalOnly && cloudAccount.status === "restoring") {
-    return <LocalProfileRestoring profileName="your cloud account" />;
+    return <LocalProfileRestoring profileName="your cloud account" productName={standaloneStudyDeck ? "Study Deck" : "Semester Board"} productSubtitle={standaloneStudyDeck ? "Private source-grounded practice" : "Private course workspace"} />;
   }
 
   if (cloudAccount.configured && !useLocalOnly && !cloudAccount.profile) {
@@ -695,6 +744,9 @@ export default function App() {
         account={cloudAccount}
         localProfiles={localProfile.profiles}
         onUseLocal={() => setUseLocalOnly(true)}
+        privacyDescription={standaloneStudyDeck ? "Courses, source metadata, generated decks, quiz progress, and Study Deck settings sync to private Supabase storage for this account. Source files use private account storage. AI consent stays on this device." : undefined}
+        productDescription={standaloneStudyDeck ? "Use one private account to keep your courses, source library, and study progress available across your devices." : undefined}
+        productName={standaloneStudyDeck ? "Study Deck" : "Semester Board"}
       />
     );
   }
@@ -702,19 +754,27 @@ export default function App() {
   if (cloudAccount.configured && !useLocalOnly && cloudAccount.profile) {
     return (
       <CloudSyncProvider client={cloudAccount.client} key={cloudAccount.profile.id} userId={cloudAccount.profile.id}>
-        <CloudMigrationBoundary account={cloudAccount} localProfiles={localProfile.profiles}>
-          <SemesterDashboard
-            key={cloudAccount.profile.id}
-            onSignOut={() => cloudAccount.signOut({ everywhere: false })}
-            profile={cloudAccount.profile}
-          />
+        <CloudMigrationBoundary account={cloudAccount} localProfiles={localProfile.profiles} productName={standaloneStudyDeck ? "Study Deck" : "Semester Board"} productSubtitle={standaloneStudyDeck ? "Private source-grounded practice" : "Private course workspace"}>
+          {standaloneStudyDeck ? (
+            <SoloStudyDeck
+              key={cloudAccount.profile.id}
+              onSignOut={() => cloudAccount.signOut({ everywhere: false })}
+              profile={cloudAccount.profile}
+            />
+          ) : (
+            <SemesterDashboard
+              key={cloudAccount.profile.id}
+              onSignOut={() => cloudAccount.signOut({ everywhere: false })}
+              profile={cloudAccount.profile}
+            />
+          )}
         </CloudMigrationBoundary>
       </CloudSyncProvider>
     );
   }
 
   if (localProfile.restoring) {
-    return <LocalProfileRestoring profileName={localProfile.restoringProfileName} />;
+    return <LocalProfileRestoring profileName={localProfile.restoringProfileName} productName={standaloneStudyDeck ? "Study Deck" : "Semester Board"} productSubtitle={standaloneStudyDeck ? "Private source-grounded practice" : "Private course workspace"} />;
   }
 
   if (!localProfile.profile) {
@@ -725,12 +785,23 @@ export default function App() {
           ? "Cross-device accounts are not configured in this build yet. Device-only profiles remain available."
           : null)}
         profiles={localProfile.profiles}
+        productName={standaloneStudyDeck ? "Study Deck" : "Semester Board"}
+        profileDescription={standaloneStudyDeck ? "Profiles remember each person’s courses, private source library, generated decks, quizzes, and progress on this browser." : undefined}
         signIn={localProfile.signIn}
       />
     );
   }
 
-  return (
+  return standaloneStudyDeck ? (
+    <SoloStudyDeck
+      key={localProfile.profile.id}
+      onSignOut={() => {
+        localProfile.signOut();
+        if (cloudAccount.configured) setUseLocalOnly(false);
+      }}
+      profile={{ ...localProfile.profile, syncMode: "local" }}
+    />
+  ) : (
     <SemesterDashboard
       key={localProfile.profile.id}
       onSignOut={() => {

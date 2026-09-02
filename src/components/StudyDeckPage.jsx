@@ -1901,7 +1901,7 @@ export default function StudyDeckPage({
           <div><span className="study-deck-eyebrow">{activeCourse ? `${activeCourse.code || "Course"} · source-grounded active recall` : "Source-grounded active recall"}</span><h2 id="study-deck-title">{activeDeck?.title || "Create your first course"}</h2><p>{activeDeck?.subtitle || "Keep every course’s sources, decks, and progress in its own private workspace."}</p></div>
         </div>
         <div className="study-deck-hero-actions">
-          <span className="study-deck-session-note"><Icon name="lock" size={15} />Saved to this profile · cloud accounts sync dashboard data.</span>
+          <span className="study-deck-session-note"><Icon name="lock" size={15} />Saved to this profile · cloud accounts sync Study Deck data.</span>
           <div className="study-deck-hero-action-buttons" aria-label="Study Deck actions">
             <button className="study-deck-button-primary" disabled={generationDisabled} onClick={() => generateFromSources("practice")} title={generationActionTitle} type="button"><Icon name="target" size={16} />{generationInProgress ? "Generating…" : "Generate practice"}</button>
             <button className="study-deck-button-ghost" disabled={generationDisabled} onClick={() => generateFromSources("quiz")} title={generationActionTitle} type="button"><Icon name="check" size={16} />{generationInProgress ? "Generating…" : "Generate quiz"}</button>
@@ -1909,8 +1909,6 @@ export default function StudyDeckPage({
           </div>
         </div>
       </header>
-
-      <GenerationSetup activeCourse={activeCourse} onChange={updateGenerationSettings} settings={generationSettings} />
 
       <CourseSpaceManager activeCourseId={activeCourse?.id || null} courses={courses} onAdd={addCourse} onArchive={archiveCourse} onRename={renameCourse} onRestore={restoreCourse} onSelect={selectCourse} />
 
@@ -1921,6 +1919,8 @@ export default function StudyDeckPage({
         </aside>
       ) : (
         <>
+          <GenerationSetup activeCourse={activeCourse} onChange={updateGenerationSettings} settings={generationSettings} />
+
           <DeckPicker activeDeckId={activeDeck.id} customDecks={customDecks} deckSourceRevisionByDeck={savedState.deckSourceRevisionByDeck} genericDeck={genericDeck} onSelect={selectDeck} sourceRevision={sourceRevision} />
 
           <aside className="study-deck-scope-note">
