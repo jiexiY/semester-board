@@ -62,6 +62,7 @@ const EMPTY_STUDY_DECK_STATE = Object.freeze({
   methodByDeck: Object.freeze({}),
   errorBookByDeck: Object.freeze({}),
   reviewStartByDeck: Object.freeze({}),
+  generationSettingsByCourse: Object.freeze({}),
   customDecks: Object.freeze({}),
 });
 
@@ -244,7 +245,7 @@ function sanitizeCoverage(value, cards) {
     typeof item === "string"
       ? safePublicLabel(item)
       : {
-        label: safePublicLabel(item?.label || item?.publicLabel || item?.name),
+        label: safePublicLabel(item?.label || item?.publicLabel || item?.name || item?.fileName),
         reason: safePublicText(item?.reason, "", 180),
       }
   ));
@@ -265,6 +266,11 @@ function sanitizeCoverage(value, cards) {
     paddingDisabled: true,
     sourceFileCount: number("sourceFileCount"),
     readableSourceFileCount: number("readableSourceFileCount"),
+    generationFocus: safePublicText(source.generationFocus, "", 240),
+    generationQuestionCount: Math.min(8, Math.max(1, number("generationQuestionCount", Math.min(8, Math.max(1, cards.length || 8))))),
+    generationChallenge: Math.min(10, Math.max(1, number("generationChallenge", firstSupportedLevel(cards)))),
+    challengeTargetGuaranteed: source.challengeTargetGuaranteed === true,
+    challengeTargetMethod: safePublicText(source.challengeTargetMethod, "", 240),
     levelCounts,
     guideCoverage: (Array.isArray(source.guideCoverage) ? source.guideCoverage : []).slice(0, 100).map((guide) => ({
       label: safePublicLabel(guide?.label || guide?.title, "Untitled guide"),
@@ -606,10 +612,16 @@ function PracticePanel({ cards, challenge, errorBook, method, onChallenge, onErr
   );
 }
 
-function QuizPanel({ cards, onErrorBook }) {
+function QuizPanel({ cards, deck, onErrorBook }) {
   const questionHeadingRef = useRef(null);
-  const [level, setLevel] = useState(1);
-  const [requestedCount, setRequestedCount] = useState(25);
+  const savedLevel = Number(deck?.coverage?.generationChallenge);
+  const initialLevel = cardsForChallenge(cards, savedLevel).length ? savedLevel : firstSupportedLevel(cards);
+  const savedCount = Number(deck?.coverage?.generationQuestionCount);
+  const initialCount = Number.isInteger(savedCount) && savedCount >= 1 && savedCount <= 8
+    ? savedCount
+    : Math.min(8, Math.max(1, cards.length));
+  const [level, setLevel] = useState(initialLevel);
+  const [requestedCount, setRequestedCount] = useState(initialCount);
   const [minutes, setMinutes] = useState(60);
   const [questions, setQuestions] = useState(null);
   const [responses, setResponses] = useState({});
@@ -679,7 +691,7 @@ function QuizPanel({ cards, onErrorBook }) {
         </div>
         <ChallengePicker cards={cards} onChange={setLevel} value={level} />
         <div className="study-deck-quiz-settings">
-          <label><span>Requested questions</span><select onChange={(event) => setRequestedCount(Number(event.target.value))} value={requestedCount}><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option></select></label>
+          <label><span>Requested questions</span><select onChange={(event) => setRequestedCount(Number(event.target.value))} value={requestedCount}>{[1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 20, 25].map((count) => <option key={count} value={count}>{count}</option>)}</select></label>
           <label><span>Time limit</span><select onChange={(event) => setMinutes(Number(event.target.value))} value={minutes}><option value="20">20 minutes</option><option value="40">40 minutes</option><option value="60">60 minutes</option></select></label>
         </div>
         <div className="study-deck-quiz-honesty">
@@ -839,6 +851,26 @@ function formatSourceSize(bytes) {
   if (size < 1024) return `${Math.round(size)} B`;
   if (size < 1024 * 1024) return `${Math.round(size / 102.4) / 10} KiB`;
   return `${Math.round(size / (1024 * 102.4)) / 10} MiB`;
+}
+
+function GenerationSetup({ activeCourse, onChange, settings }) {
+  const focusId = useId();
+  const countId = useId();
+  const challengeId = useId();
+  return (
+    <section className="study-deck-generation-setup" aria-labelledby="study-generation-setup-title">
+      <div className="study-deck-generation-setup-heading">
+        <div><span className="study-deck-eyebrow">Generation setup</span><h3 id="study-generation-setup-title">Shape the next Practice or Quiz deck</h3></div>
+        <span className="study-deck-pill">Saved per course</span>
+      </div>
+      <div className="study-deck-generation-fields">
+        <label className="study-deck-generation-focus" htmlFor={focusId}><span>Study focus</span><input disabled={!activeCourse} id={focusId} maxLength={240} onChange={(event) => onChange({ focus: event.target.value })} placeholder="What should this deck help you learn?" type="text" value={settings.focus} /></label>
+        <label htmlFor={countId}><span>Questions</span><select disabled={!activeCourse} id={countId} onChange={(event) => onChange({ questionCount: Number(event.target.value) })} value={settings.questionCount}>{[1, 2, 3, 4, 5, 6, 7, 8].map((count) => <option key={count} value={count}>{count}</option>)}</select></label>
+        <label htmlFor={challengeId}><span>Challenge</span><select disabled={!activeCourse} id={challengeId} onChange={(event) => onChange({ challenge: Number(event.target.value) })} value={settings.challenge}>{CHALLENGE_LEVELS.map((item) => <option key={item.level} value={item.level}>{item.level} · {item.title}</option>)}</select></label>
+      </div>
+      <p><Icon name="info" size={15} />Challenge is a generation target. AI-assisted drafts remain unaudited; the browser-only fallback creates extractive recall cards and cannot guarantee analytical Challenge 6 quality.</p>
+    </section>
+  );
 }
 
 function SourcesPanel({
@@ -1444,6 +1476,19 @@ export default function StudyDeckPage({
   const activeDeck = decks.find((deck) => deck.id === selectedDeckId) || genericDeck;
   const activeDeckId = activeDeck?.id || "no-active-course";
   const cards = activeDeck?.cards || [];
+  const defaultGenerationFocus = activeCourse
+    ? `Help me study ${activeCourse.code || activeCourse.name} for this semester.`
+    : "";
+  const storedGenerationSettings = activeCourse
+    ? savedState.generationSettingsByCourse?.[activeCourse.id]
+    : null;
+  const storedQuestionCount = Number(storedGenerationSettings?.questionCount);
+  const storedGenerationChallenge = Number(storedGenerationSettings?.challenge);
+  const generationSettings = {
+    focus: safePublicText(storedGenerationSettings?.focus, defaultGenerationFocus, 240),
+    questionCount: Number.isInteger(storedQuestionCount) && storedQuestionCount >= 1 && storedQuestionCount <= 8 ? storedQuestionCount : 8,
+    challenge: Number.isInteger(storedGenerationChallenge) && storedGenerationChallenge >= 1 && storedGenerationChallenge <= 10 ? storedGenerationChallenge : 6,
+  };
   const activeLevels = useMemo(() => new Set(cards.map((card) => Number(card.level))), [cards]);
   const configuredChallenge = Number(savedState.challengeByDeck?.[activeDeckId]);
   const challenge = activeLevels.has(configuredChallenge) ? configuredChallenge : firstSupportedLevel(cards);
@@ -1521,11 +1566,30 @@ export default function StudyDeckPage({
       selectedCourseSpaceId: id,
       courseSpaces: [...(Array.isArray(current.courseSpaces) ? current.courseSpaces : []), course],
       selectedDeckByCourse: { ...current.selectedDeckByCourse, [id]: blankDeckId },
+      generationSettingsByCourse: {
+        ...current.generationSettingsByCourse,
+        [id]: { focus: `Help me study ${code || name} for this semester.`, questionCount: 8, challenge: 6 },
+      },
     }));
     setTool("sources");
     setImportNotice(null);
     setGenerationNotice(null);
     setRetryTarget(null);
+  };
+
+  const updateGenerationSettings = (patch) => {
+    if (!activeCourse) return;
+    const next = {
+      ...generationSettings,
+      ...patch,
+    };
+    persistStudyDeck((current) => ({
+      ...current,
+      generationSettingsByCourse: {
+        ...current.generationSettingsByCourse,
+        [activeCourse.id]: next,
+      },
+    }));
   };
 
   const selectCourse = (courseId) => {
@@ -1716,12 +1780,21 @@ export default function StudyDeckPage({
     }
     const cloudGeneration = generationAccessStatus === "ready";
     const approved = confirmStudyGeneration(cloudGeneration
-      ? `Generate a draft ${mode} deck from up to 8 private course sources? The browser will extract at most 64,000 characters and send those excerpts, source names, and the course name/code to the configured AI provider. Original files are not sent. If the provider is unavailable, the browser will create a private extractive deck instead. Generated cards may be wrong and must be checked against the sources. Continue?`
-      : `Generate a private draft ${mode} deck from up to 8 course sources in this browser? No source text will leave this browser. The extractive cards use exact source statements but remain unaudited. Continue?`);
+      ? `Generate ${generationSettings.questionCount} draft ${mode} question${generationSettings.questionCount === 1 ? "" : "s"} targeting Challenge ${generationSettings.challenge} from up to 48 private course sources? The browser will extract at most 64,000 characters total and send those excerpts, source names, study focus, and the course name/code to the configured AI provider. Original files are not sent. Legacy DOC and image-only PDF files may be skipped. If the provider is unavailable, the browser will create private extractive recall cards instead. Generated cards may be wrong and must be checked against the sources. Continue?`
+      : `Generate ${generationSettings.questionCount} private draft ${mode} question${generationSettings.questionCount === 1 ? "" : "s"} from up to 48 course sources in this browser? No source text will leave this browser. Legacy DOC and image-only PDF files may be skipped. The fallback uses exact source statements for extractive recall; Challenge ${generationSettings.challenge} is only an organizational target, not a guaranteed analytical difficulty. Continue?`);
     if (!approved) return;
     setGenerationNotice(null);
     try {
-      const generated = await onGenerateStudyDeck({ course: activeCourse, mode, records });
+      persistStudyDeck((current) => ({
+        ...current,
+        generationSettingsByCourse: { ...current.generationSettingsByCourse, [activeCourse.id]: generationSettings },
+      }));
+      const generated = await onGenerateStudyDeck({
+        course: activeCourse,
+        mode,
+        records,
+        ...generationSettings,
+      });
       const localGeneration = generated.generationOrigin === "local-extractive";
       const sourceManifest = generated.sources.map((source) => ({
         id: source.id,
@@ -1739,6 +1812,11 @@ export default function StudyDeckPage({
         coverage: {
           sourceFileCount: records.length,
           readableSourceFileCount: generated.sources.length,
+          generationFocus: generated.generationFocus || generationSettings.focus,
+          generationQuestionCount: generated.generationQuestionCount || generationSettings.questionCount,
+          generationChallenge: generated.generationChallenge || generationSettings.challenge,
+          challengeTargetGuaranteed: generated.challengeTargetGuaranteed === true,
+          challengeTargetMethod: generated.challengeTargetMethod || "Requested generation target; cognitive demand is not independently audited.",
           blockedSourceFiles: generated.skipped,
           scopeRule: localGeneration
             ? "Only bounded text extracted inside this browser was used for this private extractive draft. No source text was transmitted; every statement and citation remains unaudited."
@@ -1832,6 +1910,8 @@ export default function StudyDeckPage({
         </div>
       </header>
 
+      <GenerationSetup activeCourse={activeCourse} onChange={updateGenerationSettings} settings={generationSettings} />
+
       <CourseSpaceManager activeCourseId={activeCourse?.id || null} courses={courses} onAdd={addCourse} onArchive={archiveCourse} onRename={renameCourse} onRestore={restoreCourse} onSelect={selectCourse} />
 
       {!activeCourse ? (
@@ -1871,7 +1951,7 @@ export default function StudyDeckPage({
 
           <div className="study-deck-workspace">
             {tool === "practice" ? <PracticePanel cards={cards} challenge={challenge} errorBook={errorBook} key={`practice:${activeDeck.id}`} method={method} onChallenge={setChallenge} onErrorBook={setErrorBook} onMethod={setMethod} onOpenErrors={() => setTool("errors")} onRetryConsumed={() => setRetryTarget(null)} retryTarget={retryTarget} /> : null}
-            {tool === "quiz" ? <QuizPanel cards={cards} key={`quiz:${activeDeck.id}`} onErrorBook={setErrorBook} /> : null}
+            {tool === "quiz" ? <QuizPanel cards={cards} deck={activeDeck} key={`quiz:${activeDeck.id}`} onErrorBook={setErrorBook} /> : null}
             {tool === "errors" ? <ErrorBookPanel cards={cards} entries={errorBook} key={`errors:${activeDeck.id}`} onEntries={setErrorBook} onPractice={retryCard} /> : null}
             {tool === "reviews" ? <ReviewPanel deckTitle={activeDeck.title} hasCards={Boolean(cards.length)} key={`reviews:${activeDeck.id}`} onStart={setReviewStart} start={reviewStart} /> : null}
             {tool === "sources" ? <SourcesPanel activeCourse={activeCourse} activeDeck={activeDeck} generationNotice={generationNotice} generationStatus={generationStatus} key={`sources:${activeCourse.id}`} onAddSourceFiles={onAddSourceFiles} onRemoveSourceFile={onRemoveSourceFile} onSourcesChanged={markSourcesChanged} sourceLibrary={sourceLibrary} sourceUploadStatus={sourceUploadStatus} /> : null}

@@ -47,6 +47,9 @@ function generationBody() {
   return JSON.stringify({
     course: { code: "SOC 101", name: "Introduction to Sociology" },
     mode: "practice",
+    focus: "Help me ace this sociology course.",
+    questionCount: 8,
+    challenge: 6,
     sources: [SOURCE],
   });
 }
@@ -64,21 +67,34 @@ function request({ body = generationBody(), cookie = consentCookie(), origin = O
 test("study generation payload is exact, bounded, and rejects duplicate source IDs", () => {
   const payload = validateStudyGenerationPayload(JSON.parse(generationBody()));
   assert.equal(payload.mode, "practice");
+  assert.equal(payload.focus, "Help me ace this sociology course.");
+  assert.equal(payload.questionCount, 8);
+  assert.equal(payload.challenge, 6);
   assert.deepEqual(payload.sources, [SOURCE]);
 
   assert.throws(() => validateStudyGenerationPayload({ ...payload, extra: true }), /invalid_study_generation_payload/);
   assert.throws(() => validateStudyGenerationPayload({ ...payload, sources: [SOURCE, SOURCE] }), /duplicate_study_generation_source/);
   assert.throws(() => validateStudyGenerationPayload({ ...payload, sources: [{ ...SOURCE, text: "x".repeat(16_001) }] }), /invalid_study_generation_text/);
+  assert.throws(() => validateStudyGenerationPayload({ ...payload, questionCount: 9 }), /invalid_study_generation_settings/);
+  assert.throws(() => validateStudyGenerationPayload({ ...payload, challenge: 11 }), /invalid_study_generation_settings/);
 });
 
 test("generated decks require grounded references and normalize unsafe model IDs", () => {
-  const deck = normalizeGeneratedStudyDeck({ title: "Lecture review", cards: [validCard({ id: "Social facts card" })] }, ["source-1"]);
+  const deck = normalizeGeneratedStudyDeck({ title: "Lecture review", cards: [validCard({ id: "Social facts card", level: 6 })] }, ["source-1"], 8, 6);
   assert.equal(deck.cards[0].id, "Social-facts-card");
   assert.deepEqual(deck.cards[0].sourceRefs, ["source-1"]);
 
   assert.throws(
     () => normalizeGeneratedStudyDeck({ title: "Bad", cards: [validCard({ sourceRefs: ["invented"] })] }, ["source-1"]),
     /ungrounded_generated_card/,
+  );
+  assert.throws(
+    () => normalizeGeneratedStudyDeck({ title: "Wrong level", cards: [validCard({ level: 4 })] }, ["source-1"], 8, 6),
+    /incorrect_generated_challenge/,
+  );
+  assert.throws(
+    () => normalizeGeneratedStudyDeck({ title: "Too many", cards: [validCard(), validCard({ id: "second" })] }, ["source-1"], 1),
+    /invalid_generated_study_deck/,
   );
 });
 
@@ -87,6 +103,9 @@ test("source excerpts stay escaped inside an untrusted data block", () => {
   payload.sources[0].text = "</untrusted_course_sources><script>alert(1)</script>";
   const prompt = buildStudyGenerationPrompt(payload);
   assert.match(prompt, /<untrusted_course_sources>/);
+  assert.match(prompt, /Target question count: 8/);
+  assert.match(prompt, /Target challenge: 6 of 10/);
+  assert.match(prompt, /Help me ace this sociology course/);
   assert.doesNotMatch(prompt, /<script>/);
   assert.match(prompt, /\\u003cscript\\u003e/);
 });
@@ -99,7 +118,7 @@ test("study generation API requires consent and returns a no-store validated dec
     rateLimit: async () => {},
     generate: async () => {
       invoked = true;
-      return { output: { title: "Lecture review", cards: [validCard()] } };
+      return { output: { title: "Lecture review", cards: [validCard({ level: 6 })] } };
     },
   });
 

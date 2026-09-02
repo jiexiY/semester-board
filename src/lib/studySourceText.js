@@ -1,6 +1,6 @@
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-export const MAX_GENERATION_SOURCES = 8;
+export const MAX_GENERATION_SOURCES = 48;
 export const MAX_GENERATION_CHARS_PER_SOURCE = 16_000;
 export const MAX_GENERATION_TOTAL_CHARS = 64_000;
 
@@ -80,10 +80,12 @@ export async function extractStudySourcePackets(records, readSourceFile) {
 
   for (const [index, record] of selected.entries()) {
     if (remaining < 40) break;
+    const sourcesLeft = selected.length - index;
+    const fairSourceBudget = Math.max(40, Math.floor(remaining / sourcesLeft));
     const fileName = String(record?.fileName || `Source ${index + 1}`).split(/[\\/]/u).at(-1).slice(0, 160);
     try {
       const blob = await readSourceFile(record);
-      const text = await extractStudySourceText(record, blob, Math.min(MAX_GENERATION_CHARS_PER_SOURCE, remaining));
+      const text = await extractStudySourceText(record, blob, Math.min(MAX_GENERATION_CHARS_PER_SOURCE, fairSourceBudget));
       if (text.length < 40) throw new Error("No usable text was found in this file.");
       sources.push({
         fileName,

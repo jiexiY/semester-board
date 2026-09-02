@@ -36,6 +36,7 @@ export const DEFAULT_STUDY_DECK_STATE = Object.freeze({
   methodByDeck: Object.freeze({}),
   errorBookByDeck: Object.freeze({}),
   reviewStartByDeck: Object.freeze({}),
+  generationSettingsByCourse: Object.freeze({}),
   customDecks: Object.freeze({}),
 });
 
@@ -320,6 +321,18 @@ export function normalizeStudyDeckState(value) {
     .map(([deckId, start]) => [deckId, typeof start === "string" ? start.trim() : start])
     .filter(([deckId, start]) => !rejectedDeckIds.has(deckId)
       && typeof start === "string" && start.length <= 40 && !Number.isNaN(new Date(start).getTime())));
+  const generationSettingsByCourse = Object.fromEntries(safeDeckEntries(source.generationSettingsByCourse, MAX_COURSE_SPACES * 2)
+    .map(([courseId, settings]) => {
+      if (!validCourseIds.has(courseId) || !isRecord(settings)) return [courseId, null];
+      const questionCount = Number(settings.questionCount);
+      const challenge = Number(settings.challenge);
+      return [courseId, {
+        focus: normalizeText(settings.focus, 240),
+        questionCount: Number.isInteger(questionCount) && questionCount >= 1 && questionCount <= 8 ? questionCount : 8,
+        challenge: Number.isInteger(challenge) && challenge >= 1 && challenge <= 10 ? challenge : 6,
+      }];
+    })
+    .filter(([, settings]) => settings));
   const normalizedSelectedDeckId = normalizeIdentifier(source.selectedDeckId);
   const selectedDeckId = normalizedSelectedDeckId && !rejectedDeckIds.has(normalizedSelectedDeckId)
     ? normalizedSelectedDeckId
@@ -338,6 +351,7 @@ export function normalizeStudyDeckState(value) {
     methodByDeck,
     errorBookByDeck,
     reviewStartByDeck,
+    generationSettingsByCourse,
     customDecks,
   };
 }

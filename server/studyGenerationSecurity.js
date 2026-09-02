@@ -1,8 +1,8 @@
 import { CloudAssistantRequestError } from "./cloudAssistantSecurity.js";
 import { validateStudyDeck } from "../src/lib/studyDeck.js";
 
-export const MAX_STUDY_GENERATION_JSON_BYTES = 96 * 1024;
-export const MAX_STUDY_GENERATION_SOURCES = 8;
+export const MAX_STUDY_GENERATION_JSON_BYTES = 320 * 1024;
+export const MAX_STUDY_GENERATION_SOURCES = 48;
 export const MAX_STUDY_GENERATION_SOURCE_CHARS = 16_000;
 export const MAX_STUDY_GENERATION_TOTAL_CHARS = 64_000;
 export const MAX_GENERATED_CARDS = 8;
@@ -35,13 +35,19 @@ function safeId(value) {
 }
 
 export function validateStudyGenerationPayload(payload) {
-  if (!isPlainObject(payload) || !hasOnlyKeys(payload, ["course", "mode", "sources"])) {
+  if (!isPlainObject(payload) || !hasOnlyKeys(payload, ["course", "mode", "sources", "focus", "questionCount", "challenge"])) {
     throw new CloudAssistantRequestError(400, "invalid_study_generation_payload");
   }
   if (!isPlainObject(payload.course) || !hasOnlyKeys(payload.course, ["code", "name"])) {
     throw new CloudAssistantRequestError(400, "invalid_study_generation_course");
   }
   const mode = payload.mode === "quiz" ? "quiz" : payload.mode === "practice" ? "practice" : null;
+  const questionCount = Number(payload.questionCount);
+  const challenge = Number(payload.challenge);
+  if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > MAX_GENERATED_CARDS
+    || !Number.isInteger(challenge) || challenge < 1 || challenge > 10) {
+    throw new CloudAssistantRequestError(400, "invalid_study_generation_settings");
+  }
   if (!mode || !Array.isArray(payload.sources) || !payload.sources.length || payload.sources.length > MAX_STUDY_GENERATION_SOURCES) {
     throw new CloudAssistantRequestError(400, "invalid_study_generation_sources");
   }
@@ -71,6 +77,9 @@ export function validateStudyGenerationPayload(payload) {
       name: safeText(payload.course.name, 120),
     },
     mode,
+    focus: safeText(payload.focus, 240),
+    questionCount,
+    challenge,
     sources,
   };
 }
@@ -141,13 +150,17 @@ function projectCard(card, index, allowedSourceIds) {
   };
 }
 
-export function normalizeGeneratedStudyDeck(output, sourceIds) {
+export function normalizeGeneratedStudyDeck(output, sourceIds, maxCards = MAX_GENERATED_CARDS, expectedChallenge = null) {
+  const cardLimit = Number.isInteger(maxCards) ? Math.min(MAX_GENERATED_CARDS, Math.max(1, maxCards)) : MAX_GENERATED_CARDS;
   if (!isPlainObject(output) || !Array.isArray(output.cards)
-    || !output.cards.length || output.cards.length > MAX_GENERATED_CARDS) {
+    || !output.cards.length || output.cards.length > cardLimit) {
     throw new CloudAssistantRequestError(502, "invalid_generated_study_deck");
   }
   const allowedSourceIds = new Set(sourceIds);
   const cards = output.cards.map((card, index) => projectCard(card, index, allowedSourceIds));
+  if (Number.isInteger(expectedChallenge) && cards.some((card) => card.level !== expectedChallenge)) {
+    throw new CloudAssistantRequestError(502, "incorrect_generated_challenge");
+  }
   if (cards.some((card) => !card.sourceRefs.length)) {
     throw new CloudAssistantRequestError(502, "ungrounded_generated_card");
   }

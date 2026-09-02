@@ -169,6 +169,15 @@ test("practice and quiz generation actions stay in the top Study Deck header", (
   assert.equal(studyDeckPageSource.match(/generateFromSources\("quiz"\)/gu)?.length, 1);
 });
 
+test("Study Deck exposes saved focus, question count, and challenge generation controls", () => {
+  assert.match(studyDeckPageSource, /className="study-deck-generation-setup"/u);
+  assert.match(studyDeckPageSource, /Study focus/u);
+  assert.match(studyDeckPageSource, /generationSettingsByCourse/u);
+  assert.match(studyDeckPageSource, /questionCount:\s*8/u);
+  assert.match(studyDeckPageSource, /challenge:\s*6/u);
+  assert.match(studyDeckPageSource, /<QuizPanel cards=\{cards\} deck=\{activeDeck\}/u);
+});
+
 test("long and opaque course-space IDs converge without truncating selections", () => {
   const identifiers = [
     "c".repeat(100),

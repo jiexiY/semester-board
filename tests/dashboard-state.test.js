@@ -158,6 +158,25 @@ test("course spaces isolate deck selection and preserve archived course data", (
   assert.deepEqual(Object.keys(state.customDecks), ["deck-a", "deck-old"]);
 });
 
+test("study generation settings persist per valid course with bounded defaults", () => {
+  const state = normalizeStudyDeckState({
+    courseSpaces: [
+      { id: "course-sya", name: "Sociology" },
+      { id: "course-ast", name: "Astronomy" },
+    ],
+    generationSettingsByCourse: {
+      "course-sya": { focus: "  Help me ace SYA 4110 this semester.  ", questionCount: 8, challenge: 6 },
+      "course-ast": { focus: "Review stars", questionCount: 99, challenge: -2 },
+      missing: { focus: "Do not retain", questionCount: 4, challenge: 4 },
+    },
+  });
+
+  assert.deepEqual(state.generationSettingsByCourse, {
+    "course-sya": { focus: "Help me ace SYA 4110 this semester.", questionCount: 8, challenge: 6 },
+    "course-ast": { focus: "Review stars", questionCount: 8, challenge: 6 },
+  });
+});
+
 test("course-space normalization caps entries and rejects cross-course or orphan deck references", () => {
   const courseSpaces = Array.from({ length: MAX_COURSE_SPACES + 4 }, (_, index) => ({
     id: `course-${index}`,

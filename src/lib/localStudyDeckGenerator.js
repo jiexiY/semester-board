@@ -161,7 +161,7 @@ function candidatesFromSources(sources) {
   return candidates;
 }
 
-function cardForCandidate(candidate, index, candidates, courseLabel) {
+function cardForCandidate(candidate, index, candidates, courseLabel, challenge) {
   const otherPhrases = candidates.flatMap((item) => [
     item.phrase?.text,
     phraseForStatement(item.statement, -1)?.text,
@@ -185,7 +185,7 @@ function cardForCandidate(candidate, index, candidates, courseLabel) {
   const citation = `${candidate.fileName}, ${candidate.location}`;
   return {
     id: `local-${stableHash(seed)}-${index + 1}`,
-    level: (index % 4) + 1,
+    level: challenge,
     topic: topicFor(candidate.statement),
     objective: `Restore one exact statement from ${candidate.fileName}.`,
     coreQuestion: `Which phrase completes this ${courseLabel} source statement exactly?`,
@@ -214,24 +214,57 @@ function cardForCandidate(candidate, index, candidates, courseLabel) {
     },
     acceptedAnswerVariants: [answer],
     hint: `Check ${citation}.`,
-    difficulty: index < 2 ? "recognition" : "recall",
+    difficulty: challenge <= 3 ? (index < 2 ? "recognition" : "recall") : "extractive-recall",
     prerequisites: [],
   };
 }
 
-export function buildLocalStudyDeck({ course, mode = "practice", sources } = {}) {
+function balancedCandidates(candidates, limit) {
+  const groups = new Map();
+  for (const candidate of candidates) {
+    const group = groups.get(candidate.sourceId) || [];
+    group.push(candidate);
+    groups.set(candidate.sourceId, group);
+  }
+  const selected = [];
+  for (let offset = 0; selected.length < limit; offset += 1) {
+    let added = false;
+    for (const group of groups.values()) {
+      if (group[offset]) {
+        selected.push(group[offset]);
+        added = true;
+        if (selected.length === limit) break;
+      }
+    }
+    if (!added) break;
+  }
+  return selected;
+}
+
+export function buildLocalStudyDeck({ course, mode = "practice", sources, focus = "", questionCount = 8, challenge = 6 } = {}) {
   const candidates = candidatesFromSources(sources);
   if (!candidates.length) {
     throw new Error("No readable source statements were long enough to turn into practice cards. Try a text-based PDF, DOCX, or TXT file with complete sentences.");
   }
-  const selected = candidates.slice(0, MAX_LOCAL_STUDY_CARDS);
+  const requestedCount = Number.isInteger(Number(questionCount))
+    ? Math.min(MAX_LOCAL_STUDY_CARDS, Math.max(1, Number(questionCount)))
+    : MAX_LOCAL_STUDY_CARDS;
+  const requestedChallenge = Number.isInteger(Number(challenge))
+    ? Math.min(10, Math.max(1, Number(challenge)))
+    : 6;
+  const selected = balancedCandidates(candidates, requestedCount);
   const courseLabel = compactText(course?.code || course?.name, 48) || "course";
-  const cards = selected.map((candidate, index) => cardForCandidate(candidate, index, selected, courseLabel));
+  const cards = selected.map((candidate, index) => cardForCandidate(candidate, index, selected, courseLabel, requestedChallenge));
   const errors = validateStudyDeck(cards);
   if (errors.length) throw new Error("The private browser-generated cards did not pass validation. Nothing was saved.");
   return {
     cards,
+    challengeTargetGuaranteed: false,
+    challengeTargetMethod: "Browser extractive recall; the requested challenge is an organizational target, not a validated cognitive-demand rating.",
+    generationChallenge: requestedChallenge,
+    generationFocus: compactText(focus, 240),
     generationOrigin: "local-extractive",
-    title: `${courseLabel} ${mode === "quiz" ? "source quiz" : "source practice"}`,
+    generationQuestionCount: requestedCount,
+    title: compactText(focus, 96) || `${courseLabel} ${mode === "quiz" ? "source quiz" : "source practice"}`,
   };
 }

@@ -18,12 +18,21 @@ test("private local generation turns uploaded source text into valid practice ca
   const deck = buildLocalStudyDeck({
     course: { code: "SYA 4110", name: "Development of Sociological Thought" },
     mode: "practice",
+    focus: "Help me ace SYA 4110.",
+    questionCount: 3,
+    challenge: 6,
     sources: SOURCES,
   });
 
   assert.equal(deck.generationOrigin, "local-extractive");
   assert.ok(deck.cards.length >= 1);
   assert.ok(deck.cards.length <= MAX_LOCAL_STUDY_CARDS);
+  assert.ok(deck.cards.length <= 3);
+  assert.ok(deck.cards.every((card) => card.level === 6));
+  assert.equal(deck.generationFocus, "Help me ace SYA 4110.");
+  assert.equal(deck.generationQuestionCount, 3);
+  assert.equal(deck.generationChallenge, 6);
+  assert.equal(deck.challengeTargetGuaranteed, false);
   assert.deepEqual(validateStudyDeck(deck.cards), []);
   assert.ok(deck.cards.every((card) => card.sourceRefs[0] === SOURCES[0].id));
   assert.ok(deck.cards.every((card) => /Lecture notes\.txt, page [12]/u.test(card.sourceCitation)));
@@ -49,4 +58,26 @@ test("private local generation explains when uploaded files contain no usable pr
     course: { code: "ENC 3464" },
     sources: [{ id: "source-empty", fileName: "outline.txt", text: "A B C" }],
   }), /No readable source statements/iu);
+});
+
+test("private local generation balances requested questions across readable sources", () => {
+  const sources = [
+    SOURCES[0],
+    {
+      id: "source-lecture-2",
+      fileName: "Second lecture.txt",
+      text: "Conflict theory examines how unequal resources shape durable social relationships. Its questions connect institutions, interests, and power through explicit comparative analysis.",
+    },
+  ];
+  const deck = buildLocalStudyDeck({
+    course: { code: "SYA 4110" },
+    focus: "Compare major theoretical approaches.",
+    questionCount: 4,
+    challenge: 7,
+    sources,
+  });
+
+  assert.equal(deck.cards.length, 4);
+  assert.deepEqual(new Set(deck.cards.flatMap((card) => card.sourceRefs)), new Set(sources.map((source) => source.id)));
+  assert.ok(deck.cards.every((card) => card.level === 7));
 });

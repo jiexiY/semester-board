@@ -25,7 +25,7 @@ export function useStudyGenerator({ aiStatus, courseSpaceId, readSourceFile }) {
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
-  const generate = useCallback(async ({ course, mode, records }) => {
+  const generate = useCallback(async ({ course, mode, records, focus, questionCount, challenge }) => {
     if (!course?.id || course.id !== courseSpaceId) {
       throw new Error("The active Study Deck course changed. Open the course and try again.");
     }
@@ -56,6 +56,9 @@ export function useStudyGenerator({ aiStatus, courseSpaceId, readSourceFile }) {
                 name: course.name,
               },
               mode,
+              focus,
+              questionCount,
+              challenge,
               sources: extracted.sources,
             }),
             cache: "no-store",
@@ -68,7 +71,15 @@ export function useStudyGenerator({ aiStatus, courseSpaceId, readSourceFile }) {
             signal: controller.signal,
           });
           if (!response.ok) throw new Error(await responseError(response));
-          deck = { ...(await response.json()), generationOrigin: "ai-assisted" };
+          deck = {
+            ...(await response.json()),
+            challengeTargetGuaranteed: false,
+            challengeTargetMethod: "AI-assisted draft targeting the requested challenge; cognitive demand is not independently audited.",
+            generationChallenge: challenge,
+            generationFocus: focus,
+            generationOrigin: "ai-assisted",
+            generationQuestionCount: questionCount,
+          };
         } catch (error) {
           if (error?.name === "AbortError") throw error;
           cloudError = error instanceof Error ? error.message : "Cloud generation was unavailable.";
@@ -81,7 +92,7 @@ export function useStudyGenerator({ aiStatus, courseSpaceId, readSourceFile }) {
             ? "Cloud generation was unavailable, so Semester Board is building private cards in this browser…"
             : "Building private source-grounded cards in this browser…",
         });
-        deck = buildLocalStudyDeck({ course, mode, sources: extracted.sources });
+        deck = buildLocalStudyDeck({ course, mode, sources: extracted.sources, focus, questionCount, challenge });
       }
       const errors = validateStudyDeck(deck?.cards);
       if (errors.length) throw new Error("The generated cards did not pass the Study Deck validator. Nothing was saved.");
