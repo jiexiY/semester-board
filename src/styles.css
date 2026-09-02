@@ -1020,10 +1020,19 @@
 }
 
 .study-deck-hero-actions {
+  display: grid;
+  justify-items: end;
   flex: 0 0 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 9px;
+}
+
+.study-deck-hero-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .study-deck-session-note,
@@ -2205,43 +2214,6 @@
   opacity: 0.5;
 }
 
-.study-deck-generation-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 12px;
-  padding: 14px;
-  border: 1px solid rgba(8, 114, 232, 0.15);
-  border-radius: 17px;
-  background: linear-gradient(135deg, rgba(231, 244, 255, 0.82), rgba(244, 239, 255, 0.76));
-}
-
-.study-deck-generation-actions h4,
-.study-deck-generation-actions p {
-  margin: 0;
-}
-
-.study-deck-generation-actions h4 {
-  margin-top: 3px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 15px;
-}
-
-.study-deck-generation-actions p {
-  max-width: 640px;
-  margin-top: 4px;
-  color: #69778c;
-  font-size: 9px;
-  line-height: 1.45;
-}
-
-.study-deck-generation-actions > div:last-child {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 8px;
-}
-
 .study-deck-source-boundary {
   display: flex;
   align-items: flex-start;
@@ -2884,6 +2856,8 @@
 
   .study-deck-hero-actions {
     max-width: none;
+    width: 100%;
+    justify-items: start;
     justify-content: flex-start;
   }
 
@@ -2969,16 +2943,6 @@
 
   .study-deck-import-actions > * {
     width: 100%;
-  }
-
-  .study-deck-generation-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .study-deck-generation-actions > div:last-child {
-    display: grid;
-    grid-template-columns: 1fr;
   }
 
   .study-deck-source-library > ul > li {
@@ -3071,10 +3035,17 @@
 
   .study-deck-session-note,
   .study-deck-hero-actions .study-deck-button-primary,
+  .study-deck-hero-actions .study-deck-button-ghost,
   .study-deck-card-actions button,
   .study-deck-review-controls button,
   .study-deck-section-heading > button {
     width: 100%;
+  }
+
+  .study-deck-hero-action-buttons {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr;
   }
 
   .study-deck-tools {

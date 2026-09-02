@@ -847,8 +847,6 @@ function SourcesPanel({
   generationNotice,
   generationStatus,
   onAddSourceFiles,
-  onGeneratePractice,
-  onGenerateQuiz,
   onRemoveSourceFile,
   onSourcesChanged,
   sourceLibrary,
@@ -1018,18 +1016,6 @@ function SourcesPanel({
               })}
             </ul>
           )}
-        </div>
-      </div>
-
-      <div className="study-deck-generation-actions" aria-label="Generate from course sources">
-        <div>
-          <span className="study-deck-eyebrow">Build from these sources</span>
-          <h4>Generate a draft deck</h4>
-          <p>The same validated cards power Practice and Quiz. Generation uses only bounded text extracted from up to eight files in this course.</p>
-        </div>
-        <div>
-          <button className="study-deck-button-primary" disabled={!records.length || generating || typeof onGeneratePractice !== "function"} onClick={onGeneratePractice} type="button"><Icon name="target" size={17} />{generating ? "Generating…" : "Generate practice"}</button>
-          <button className="study-deck-button-ghost" disabled={!records.length || generating || typeof onGenerateQuiz !== "function"} onClick={onGenerateQuiz} type="button"><Icon name="check" size={17} />{generating ? "Generating…" : "Generate quiz"}</button>
         </div>
       </div>
 
@@ -1473,6 +1459,20 @@ export default function StudyDeckPage({
   const reviewStart = savedState.reviewStartByDeck?.[activeDeckId] || defaultReviewStart;
   const isImported = activeDeck?.deckKind === "custom";
   const sourceRevision = activeCourse ? Number(savedState.sourceRevisionByCourse?.[activeCourse.id] || 0) : 0;
+  const activeSourceCount = activeCourse && Array.isArray(sourceLibrary)
+    ? sourceLibrary.filter((record) => record?.courseSpaceId === activeCourse.id).length
+    : 0;
+  const generationInProgress = ["extracting", "generating"].includes(generationStatus?.state);
+  const generationDisabled = !activeCourse || !activeSourceCount || generationInProgress || typeof onGenerateStudyDeck !== "function";
+  const generationActionTitle = !activeCourse
+    ? "Create or select a course first."
+    : !activeSourceCount
+      ? "Add and save at least one material source for this course first."
+      : typeof onGenerateStudyDeck !== "function"
+        ? "Study generation is unavailable in this dashboard build."
+        : generationInProgress
+          ? "A Study Deck is being generated."
+          : `Generate from ${activeSourceCount} saved source${activeSourceCount === 1 ? "" : "s"} in ${activeCourse.name}.`;
   const activeDeckSourceRevision = Number(savedState.deckSourceRevisionByDeck?.[activeDeckId] || 0);
   const deckIsStale = isImported && sourceRevision > activeDeckSourceRevision;
   const selectedCourseIsValid = Boolean(activeCourseId)
@@ -1824,7 +1824,11 @@ export default function StudyDeckPage({
         </div>
         <div className="study-deck-hero-actions">
           <span className="study-deck-session-note"><Icon name="lock" size={15} />Saved to this profile · cloud accounts sync dashboard data.</span>
-          <button className="study-deck-button-primary" disabled={!activeCourse || !cards.length} onClick={() => downloadText(`${safeFileStem(activeDeck.title)}-anki.csv`, buildAnkiCsv(cards), "text/csv;charset=utf-8")} type="button"><Icon name="download" size={16} />Anki CSV</button>
+          <div className="study-deck-hero-action-buttons" aria-label="Study Deck actions">
+            <button className="study-deck-button-primary" disabled={generationDisabled} onClick={() => generateFromSources("practice")} title={generationActionTitle} type="button"><Icon name="target" size={16} />{generationInProgress ? "Generating…" : "Generate practice"}</button>
+            <button className="study-deck-button-ghost" disabled={generationDisabled} onClick={() => generateFromSources("quiz")} title={generationActionTitle} type="button"><Icon name="check" size={16} />{generationInProgress ? "Generating…" : "Generate quiz"}</button>
+            <button className="study-deck-button-ghost" disabled={!activeCourse || !cards.length} onClick={() => downloadText(`${safeFileStem(activeDeck.title)}-anki.csv`, buildAnkiCsv(cards), "text/csv;charset=utf-8")} type="button"><Icon name="download" size={16} />Anki CSV</button>
+          </div>
         </div>
       </header>
 
@@ -1870,7 +1874,7 @@ export default function StudyDeckPage({
             {tool === "quiz" ? <QuizPanel cards={cards} key={`quiz:${activeDeck.id}`} onErrorBook={setErrorBook} /> : null}
             {tool === "errors" ? <ErrorBookPanel cards={cards} entries={errorBook} key={`errors:${activeDeck.id}`} onEntries={setErrorBook} onPractice={retryCard} /> : null}
             {tool === "reviews" ? <ReviewPanel deckTitle={activeDeck.title} hasCards={Boolean(cards.length)} key={`reviews:${activeDeck.id}`} onStart={setReviewStart} start={reviewStart} /> : null}
-            {tool === "sources" ? <SourcesPanel activeCourse={activeCourse} activeDeck={activeDeck} generationNotice={generationNotice} generationStatus={generationStatus} key={`sources:${activeCourse.id}`} onAddSourceFiles={onAddSourceFiles} onGeneratePractice={() => generateFromSources("practice")} onGenerateQuiz={() => generateFromSources("quiz")} onRemoveSourceFile={onRemoveSourceFile} onSourcesChanged={markSourcesChanged} sourceLibrary={sourceLibrary} sourceUploadStatus={sourceUploadStatus} /> : null}
+            {tool === "sources" ? <SourcesPanel activeCourse={activeCourse} activeDeck={activeDeck} generationNotice={generationNotice} generationStatus={generationStatus} key={`sources:${activeCourse.id}`} onAddSourceFiles={onAddSourceFiles} onRemoveSourceFile={onRemoveSourceFile} onSourcesChanged={markSourcesChanged} sourceLibrary={sourceLibrary} sourceUploadStatus={sourceUploadStatus} /> : null}
             {tool === "lab" ? <MediaLabPanel key={`lab:${activeCourse.id}`} /> : null}
             {tool === "coverage" ? <CoveragePanel deck={activeDeck} importNotice={importNotice} isImported={isImported} key={`coverage:${activeDeck.id}`} onImportDeck={importCustomDeck} onImportNotice={setImportNotice} onRemoveCustom={removeCustomDeck} /> : null}
           </div>

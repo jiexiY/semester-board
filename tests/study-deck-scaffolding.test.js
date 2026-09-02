@@ -157,6 +157,18 @@ test("uploaded sources can generate private practice without chat AI consent", (
   assert.match(studyDeckPageSource, /generationOrigin:\s*generated\.generationOrigin/u);
 });
 
+test("practice and quiz generation actions stay in the top Study Deck header", () => {
+  const headerStart = studyDeckPageSource.indexOf('<header className="study-deck-hero">');
+  const headerEnd = studyDeckPageSource.indexOf("</header>", headerStart);
+  const practiceAction = studyDeckPageSource.indexOf('generateFromSources("practice")');
+  const quizAction = studyDeckPageSource.indexOf('generateFromSources("quiz")');
+  assert.ok(headerStart >= 0 && headerEnd > headerStart);
+  assert.ok(practiceAction > headerStart && practiceAction < headerEnd);
+  assert.ok(quizAction > headerStart && quizAction < headerEnd);
+  assert.equal(studyDeckPageSource.match(/generateFromSources\("practice"\)/gu)?.length, 1);
+  assert.equal(studyDeckPageSource.match(/generateFromSources\("quiz"\)/gu)?.length, 1);
+});
+
 test("long and opaque course-space IDs converge without truncating selections", () => {
   const identifiers = [
     "c".repeat(100),
