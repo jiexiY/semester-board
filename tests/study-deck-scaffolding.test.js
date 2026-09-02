@@ -151,6 +151,12 @@ test("Study Deck default persistence depends only on primitive render state", ()
   assert.match(studyDeckPageSource, /const courseSpaceId = canonicalStudySpaceId\(deck\.courseSpaceId\)/);
 });
 
+test("uploaded sources can generate private practice without chat AI consent", () => {
+  assert.doesNotMatch(studyDeckPageSource, /generationAccessStatus\s*!==\s*["']ready["']/u);
+  assert.match(studyDeckPageSource, /No source text will leave this browser/u);
+  assert.match(studyDeckPageSource, /generationOrigin:\s*generated\.generationOrigin/u);
+});
+
 test("long and opaque course-space IDs converge without truncating selections", () => {
   const identifiers = [
     "c".repeat(100),

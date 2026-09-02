@@ -1033,7 +1033,7 @@ function SourcesPanel({
         </div>
       </div>
 
-      <div className="study-deck-source-boundary"><Icon name="warning" size={17} /><p><strong>Generation is explicit and produces an unaudited draft.</strong> Semester Board asks before extracting and sending bounded source excerpts to the configured AI provider; original files are not sent. Adding, replacing, or removing a file never silently edits cards, quizzes, or progress. Legacy DOC files must be converted to DOCX, PDF, or TXT before generation.</p></div>
+      <div className="study-deck-source-boundary"><Icon name="warning" size={17} /><p><strong>Generation is explicit and produces an unaudited draft.</strong> Practice works privately in this browser without chat AI. If Conversational AI is enabled, Semester Board asks before sending bounded excerpts to the configured provider; original files are never sent. Adding, replacing, or removing a file never silently edits cards, quizzes, or progress. Legacy DOC files must be converted to DOCX, PDF, or TXT before generation.</p></div>
       {generationStatus?.message || generationNotice || statusMessage || notice ? (
         <div
           className={`study-deck-import-notice is-${generationNotice?.type || notice?.type || (generationState === "error" || statusName === "error" ? "error" : "success")}`}
@@ -1209,10 +1209,13 @@ function DeckPicker({ activeDeckId, customDecks, deckSourceRevisionByDeck, gener
         </button>
         {customDecks.map((deck) => {
           const stale = sourceRevision > Number(deckSourceRevisionByDeck?.[deck.id] || 0);
-          const generated = deck.generationOrigin === "ai-assisted";
+          const generated = ["ai-assisted", "local-extractive"].includes(deck.generationOrigin);
+          const generationLabel = deck.generationOrigin === "local-extractive"
+            ? "Private browser draft · citations unaudited"
+            : "AI-generated draft · citations unaudited";
           return (
             <button aria-pressed={activeDeckId === deck.id} className={`is-custom${stale ? " is-stale" : ""}`} key={deck.id} onClick={() => onSelect(deck.id)} type="button">
-              <span><strong>{deck.title}</strong><small>{deck.cards.length} structurally valid cards · {stale ? "sources changed; review needed" : generated ? "AI-generated draft · citations unaudited" : "citations unaudited"}</small></span>
+              <span><strong>{deck.title}</strong><small>{deck.cards.length} structurally valid cards · {stale ? "sources changed; review needed" : generated ? generationLabel : "citations unaudited"}</small></span>
               <b>{stale ? "Needs review" : generated ? "Draft" : "Custom"}</b>
             </button>
           );
@@ -1689,6 +1692,8 @@ export default function StudyDeckPage({
         ? `The unchanged ${importedCards.length}-card deck was marked current after your review attestation. Its claims and citations remain user-provided and unaudited.`
         : generationOrigin === "ai-assisted"
           ? `${importedCards.length} AI-generated draft cards were saved only to ${activeCourse.name}. Their claims, answers, and citations are unaudited and must be checked against the sources.`
+          : generationOrigin === "local-extractive"
+            ? `${importedCards.length} private browser-generated cards were saved only to ${activeCourse.name}. No source text left this browser; the extracted statements and citations are still unaudited.`
           : `${importedCards.length} structurally valid canonical cards were saved only to ${activeCourse.name}. Their claims and citations remain user-provided and unaudited.`,
     };
   };
@@ -1709,33 +1714,35 @@ export default function StudyDeckPage({
       setGenerationNotice({ type: "error", text: "Study generation is not connected in this dashboard build." });
       return;
     }
-    if (generationAccessStatus !== "ready") {
-      setGenerationNotice({ type: "error", text: "Open Semester Board chat and enable Conversational AI before generating from private course sources." });
-      return;
-    }
-    const approved = confirmStudyGeneration(`Generate a draft ${mode} deck from up to 8 private course sources? The browser will extract at most 64,000 characters and send those excerpts, source names, and the course name/code to the configured AI provider. Original files are not sent. Generated cards may be wrong and must be checked against the sources. Continue?`);
+    const cloudGeneration = generationAccessStatus === "ready";
+    const approved = confirmStudyGeneration(cloudGeneration
+      ? `Generate a draft ${mode} deck from up to 8 private course sources? The browser will extract at most 64,000 characters and send those excerpts, source names, and the course name/code to the configured AI provider. Original files are not sent. If the provider is unavailable, the browser will create a private extractive deck instead. Generated cards may be wrong and must be checked against the sources. Continue?`
+      : `Generate a private draft ${mode} deck from up to 8 course sources in this browser? No source text will leave this browser. The extractive cards use exact source statements but remain unaudited. Continue?`);
     if (!approved) return;
     setGenerationNotice(null);
     try {
       const generated = await onGenerateStudyDeck({ course: activeCourse, mode, records });
+      const localGeneration = generated.generationOrigin === "local-extractive";
       const sourceManifest = generated.sources.map((source) => ({
         id: source.id,
         publicLabel: source.fileName,
-        sourceKind: "AI-read course source",
+        sourceKind: localGeneration ? "Browser-read course source" : "AI-read course source",
         role: "generation evidence",
         auditStatus: "user-provided",
       }));
       const result = importCustomDeck({
         cards: sanitizeImportedCards(generated.cards),
         title: safePublicText(generated.title, `${activeCourse.name} generated study deck`, 96),
-        generationOrigin: "ai-assisted",
+        generationOrigin: generated.generationOrigin || "ai-assisted",
         generatedAt: new Date().toISOString(),
         sourceManifest,
         coverage: {
           sourceFileCount: records.length,
           readableSourceFileCount: generated.sources.length,
           blockedSourceFiles: generated.skipped,
-          scopeRule: "Only the bounded text extracted from the named course sources was supplied for this AI-generated draft. Every claim and citation remains unaudited.",
+          scopeRule: localGeneration
+            ? "Only bounded text extracted inside this browser was used for this private extractive draft. No source text was transmitted; every statement and citation remains unaudited."
+            : "Only the bounded text extracted from the named course sources was supplied for this AI-generated draft. Every claim and citation remains unaudited.",
         },
       });
       if (result?.ok === false) throw new Error(result.message);
@@ -1792,18 +1799,19 @@ export default function StudyDeckPage({
   };
 
   const openDeckUpdate = () => {
-    setTool(activeDeck?.generationOrigin === "ai-assisted" ? "sources" : "coverage");
+    const generated = ["ai-assisted", "local-extractive"].includes(activeDeck?.generationOrigin);
+    setTool(generated ? "sources" : "coverage");
     setImportNotice({
       type: "warning",
-      text: activeDeck?.generationOrigin === "ai-assisted"
+      text: generated
         ? "Sources changed after this draft was generated. Existing cards and progress remain unchanged. Review the changed evidence, then explicitly generate a new draft when you are ready."
         : "Sources changed after this deck was imported. Existing cards and progress remain unchanged. Review the evidence, update your canonical JSON outside the dashboard, then import that updated file here.",
     });
   };
 
   const scopeMessage = isImported
-    ? activeDeck?.generationOrigin === "ai-assisted"
-      ? <p><strong>{cards.length} AI-generated draft card{cards.length === 1 ? " is" : "s are"} active only in {activeCourse?.name}.</strong> Their structure passed validation, but their claims, answers, and citations have not been independently audited.</p>
+    ? ["ai-assisted", "local-extractive"].includes(activeDeck?.generationOrigin)
+      ? <p><strong>{cards.length} {activeDeck?.generationOrigin === "local-extractive" ? "private browser-generated" : "AI-generated"} draft card{cards.length === 1 ? " is" : "s are"} active only in {activeCourse?.name}.</strong> Their structure passed validation, but their statements, answers, and citations have not been independently audited.</p>
       : <p><strong>{cards.length} imported card{cards.length === 1 ? " is" : "s are"} active only in {activeCourse?.name}.</strong> Their structure passed validation, but their claims and citations have not been independently audited.</p>
     : <p><strong>{activeCourse?.name || "This course"} has a blank Study Deck workspace.</strong> No course claims or cards are preloaded. Add private source files, then explicitly generate a draft or import source-reviewed canonical cards.</p>;
 
