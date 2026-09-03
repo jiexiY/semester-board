@@ -30,7 +30,7 @@ The assistant is software, not a human support agent or an unrestricted AI. It c
 - The website and its assistant do not poll Canvas. A user may enter or privately import records they have independently verified, but Semester Board does not claim that those records are current unless the account owner maintains them.
 - The public source tree and client bundle contain only an empty semester template. Course names, assignments, schedules, source references, and Canvas evidence belong to the signed-in account state and are not public defaults.
 - `noindex` discourages search indexing; it is not access control. Account records and uploaded files depend on Supabase Auth, owner-scoped Row Level Security, and private Storage policies for access control.
-- The signed cloud-consent cookie proves consent, not identity. Semester Chat is restricted to `openai/gpt-5.4-mini`, bounded to 12 text messages / 12,000 chat characters / 32 KiB / 600 output tokens plus a 64-fact / 16,000-character minimized board snapshot, has no provider retry, and uses best-effort per-IP and per-consent limits in each warm function instance.
+- The signed cloud-consent cookie proves consent, not identity. Semester Chat uses a server-allowlisted model, is bounded to 12 text messages / 12,000 chat characters / 32 KiB / 600 output tokens plus a 64-fact / 16,000-character minimized board snapshot, has no provider retry, and uses best-effort per-IP and per-consent limits in each warm function instance.
 - Push sync and test requests also have bounded best-effort per-IP and per-subscription limits in each warm function instance. These in-memory brakes reset on cold starts, are not shared across instances, and are not a distributed WAF.
 - A dedicated budgeted `AI_GATEWAY_API_KEY` is the aggregate spending backstop for the production deployment. Keep its budget and auto-top-up policy deliberate; a budget is not a distributed request-rate limit.
 - Before broad public sharing, add authentication or a published Vercel WAF rate limit for `/api/chat`, `/api/push/sync`, and `/api/push/test`. Function-memory limits reset on cold starts, and same-origin checks stop browser CSRF but do not authenticate arbitrary HTTP clients.
@@ -67,7 +67,6 @@ Set these variables for each environment that should support the server features
 ```text
 AI_CONSENT_SIGNING_SECRET
 AI_GATEWAY_API_KEY
-AI_GATEWAY_MODEL=openai/gpt-5.4-mini
 PUSH_SIGNING_SECRET
 VAPID_PUBLIC_KEY
 VAPID_PRIVATE_KEY
@@ -75,6 +74,8 @@ VAPID_SUBJECT=https://fall-2026-quest.vercel.app
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
+
+`AI_GATEWAY_MODEL` is optional. Leave it unset to use the server default; if set, it must match the allowlist in [api/chat.post.js](api/chat.post.js).
 
 The production deployment uses a dedicated budgeted AI Gateway key. Vercel OIDC is a keyless alternative, but it does not provide that workload-key budget boundary. Workflow durability and sleep scheduling are provided by Vercel Workflow; no minute-by-minute cron job is used.
 
