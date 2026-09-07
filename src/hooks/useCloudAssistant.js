@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSyncedResource } from "./useSyncedResource.js";
 import { PROFILE_RESOURCES, cloudConsentSessionKey } from "../lib/profileStorage.js";
 
-export const CLOUD_POLICY_VERSION = "2026-09-01.1";
+export const CLOUD_POLICY_VERSION = "2026-09-07.1";
 const MAX_CLOUD_MESSAGES = 12;
 const MAX_MESSAGE_LENGTH = 3000;
 export const MAX_CLOUD_HISTORY_CHARS = 12_000;

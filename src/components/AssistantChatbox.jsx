@@ -209,9 +209,9 @@ function CloudConsentState({ actionRef, cloud, onUsePrivate }) {
       <div>
         <strong>Make Semester Board conversational</strong>
         <p>
-          Semester Chat sends the messages in this Chat conversation plus a minimized board snapshot to the configured cloud AI provider: course names, class times and rooms, upcoming work and exams, aggregate attendance counts, and reminder times. Study Deck can create private extractive practice cards entirely in this browser. Only when Conversational AI is enabled and you explicitly approve generation are bounded text excerpts from that course’s selected source files sent to the configured provider; original files are never sent.
+          Semester Chat sends the messages in this Chat conversation plus a minimized board snapshot to the configured cloud AI provider: course names, class times and rooms, upcoming work and exams, aggregate attendance counts, and reminder times. Study Deck can create private extractive practice cards entirely in this browser. When Conversational AI is enabled and you explicitly generate a semester draft or approve AI study generation, bounded text excerpts and file names from the documents you selected are sent to the configured provider; original files are never sent.
         </p>
-        <small>Your profile name and passphrase, raw attendance check-ins or notes, Canvas IDs and links, uploaded syllabus files, instructor contacts, push subscription, and Private lookup history are never included. Semester Chat is automated and cannot act outside this chat. Consent lasts up to 8 hours and can be revoked anytime.</small>
+        <small>Your profile name and passphrase, raw attendance check-ins or notes, Canvas IDs and links, full original files, instructor contacts outside selected excerpts, push subscription, and Private lookup history are never included. Semester Chat is automated and cannot act outside this chat. Consent lasts up to 8 hours and can be revoked anytime.</small>
         {cloud.error ? <small className="is-error" role="alert">{cloud.error}</small> : null}
         <button onClick={cloud.grantConsent} ref={actionRef} type="button">I understand · Start Semester Chat</button>
       </div>

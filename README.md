@@ -1,6 +1,6 @@
 # Semester Board
 
-A React/Vite semester dashboard with an aligned daily board, assignment and attendance tracking, private cross-device accounts, a synced syllabus and Study Deck source library, an on-device schedule helper, optional cloud AI chat, and optional closed-tab Web Push reminders. The public app starts with no courses or coursework. If Supabase is not configured, the device-only profile flow remains available without pretending that it syncs.
+A React/Vite semester dashboard with an aligned daily board, assignment and attendance tracking, private cross-device accounts, a synced course-document library, document-first semester setup, a standalone Study Deck, an on-device schedule helper, optional cloud AI chat, and optional closed-tab Web Push reminders. The public app starts with no courses or coursework. If Supabase is not configured, the device-only profile flow remains available without pretending that it syncs.
 
 ## What runs where
 
@@ -8,14 +8,15 @@ A React/Vite semester dashboard with an aligned daily board, assignment and atte
 | --- | --- | --- |
 | Account identity | Supabase Auth | Email, password handled by Supabase Auth, and display name |
 | Progress and attendance | Supabase Postgres + owner-scoped browser cache | Attendance/check-in records and notes, assignment completion, verified date overrides, and schedule choices |
-| Syllabus files | Private Supabase Storage + owner-scoped metadata | The file and its course/file metadata, only after upload or confirmed local-profile migration |
+| Course documents | Private Supabase Storage + owner-scoped metadata | Syllabi, assignment sheets, exam guides, calendars, and their course/file metadata, only after the user approves a generated semester draft or uploads directly |
+| Semester draft generation | Vercel Function + AI Gateway, only after consent | File names and bounded text excerpts from up to eight user-selected course documents; the user reviews the resulting courses, schedules, office hours, and coursework before saving |
 | Private lookup | Supabase Postgres for cloud accounts; browser for device-only profiles | Saved assistant history for a cloud account; no AI provider request in Private lookup mode |
 | Semester Chat | Vercel Function + AI Gateway, only after consent | Chat messages plus a minimized snapshot of course names, class times/rooms, upcoming work/exams, aggregate attendance counts, and reminder times |
 | Closed-tab reminders | Service worker + Vercel Workflow, only after consent | A Web Push subscription plus opaque reminder hashes, categories, and timestamps |
 
 Course names, assignment titles, notification copy, attendance records, syllabus files, and private-lookup history are not included in the push schedule. The service worker looks up notification copy in IndexedDB on the subscribed device. Cloud-account assistant histories sync as account data; sending a message to the configured AI provider still requires separate, expiring consent. The consent marker, notification permission, push subscription, auth-session cache, and Study Deck session/media remain device-specific.
 
-The assistant is software, not a human support agent or an unrestricted AI. It cannot inspect Canvas, read a syllabus, change dashboard records, or send reminders unless the relevant data and capability are explicitly provided through this app.
+The assistant is software, not a human support agent or an unrestricted AI. It cannot inspect Canvas or external accounts. It can process bounded excerpts from documents the user selects inside Semester Board, but generated records remain a draft until the user reviews and saves them. It cannot submit coursework or change Canvas records.
 
 ## Privacy and delivery boundaries
 
@@ -28,6 +29,7 @@ The assistant is software, not a human support agent or an unrestricted AI. It c
 - Notification permission must come from a user gesture. If the browser reports `Denied`, the app cannot override it; the user must change the site permission and reload.
 - On supported Apple mobile devices, Web Push generally requires installing the site to the Home Screen first.
 - The website and its assistant do not poll Canvas. A user may enter or privately import records they have independently verified, but Semester Board does not claim that those records are current unless the account owner maintains them.
+- Document-first setup extracts readable text in the browser, sends only bounded excerpts and file names after explicit AI consent, and saves the original files only after the user approves the draft. Generated schedules and deadlines can be incomplete or wrong; unstated dates remain blank instead of being guessed.
 - The public source tree and client bundle contain only an empty semester template. Course names, assignments, schedules, source references, and Canvas evidence belong to the signed-in account state and are not public defaults.
 - `noindex` discourages search indexing; it is not access control. Account records and uploaded files depend on Supabase Auth, owner-scoped Row Level Security, and private Storage policies for access control.
 - The signed cloud-consent cookie proves consent, not identity. Semester Chat uses a server-allowlisted model, is bounded to 12 text messages / 12,000 chat characters / 32 KiB / 600 output tokens plus a 64-fact / 16,000-character minimized board snapshot, has no provider retry, and uses best-effort per-IP and per-consent limits in each warm function instance.

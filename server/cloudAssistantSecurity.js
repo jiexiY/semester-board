@@ -10,7 +10,7 @@ import {
   readRawBody,
 } from "nitro/h3";
 
-export const AI_CONSENT_POLICY = "2026-09-01.1";
+export const AI_CONSENT_POLICY = "2026-09-07.1";
 export const AI_CONSENT_COOKIE = "fall_quest_ai_consent";
 export const AI_CONSENT_TTL_SECONDS = 8 * 60 * 60;
 export const MAX_JSON_BYTES = 32 * 1024;

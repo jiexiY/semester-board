@@ -88,8 +88,8 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
           setFeedback({
             type: "error",
             text: readableError(error, cloudMode
-              ? "Your private syllabus library could not be loaded from your account."
-              : "The syllabus library could not be opened in this browser."),
+              ? "Your private course-document library could not be loaded from your account."
+              : "The course-document library could not be opened in this browser."),
           });
         }
       } finally {
@@ -147,7 +147,7 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
     if (!SUPPORTED_EXTENSIONS.has(fileExtension(file.name))) {
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setFeedback({ type: "error", text: "Choose a PDF, DOC, DOCX, or TXT syllabus file." });
+      setFeedback({ type: "error", text: "Choose a PDF, DOC, DOCX, or TXT course document." });
       return;
     }
     setSelectedFile(file);
@@ -184,16 +184,16 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
       if (fileInputRef.current) fileInputRef.current.value = "";
       setFeedback({
         type: "success",
-        text: cloudMode ? "Syllabus saved to your private account." : "Syllabus saved in this browser.",
+        text: cloudMode ? "Course document saved to your private account." : "Course document saved in this browser.",
       });
     } catch (error) {
       setFeedback({
         type: "error",
         text: saved
-          ? "The syllabus was saved, but the list could not refresh. Reload this page to see it."
+          ? "The course document was saved, but the list could not refresh. Reload this page to see it."
           : readableError(error, cloudMode
-            ? "The syllabus could not be saved to your account."
-            : "The syllabus could not be saved in this browser."),
+            ? "The course document could not be saved to your account."
+            : "The course document could not be saved in this browser."),
       });
     } finally {
       setUploading(false);
@@ -219,7 +219,7 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
       setFeedback({ type: "success", text: `Opened ${record.fileName}.` });
     } catch (error) {
       if (url && !cloudMode) URL.revokeObjectURL(url);
-      setFeedback({ type: "error", text: readableError(error, "The syllabus could not be opened.") });
+      setFeedback({ type: "error", text: readableError(error, "The course document could not be opened.") });
     }
   };
 
@@ -242,7 +242,7 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
       setFeedback({ type: "success", text: `Download started for ${record.fileName}.` });
     } catch (error) {
       if (url) URL.revokeObjectURL(url);
-      setFeedback({ type: "error", text: readableError(error, "The syllabus could not be downloaded.") });
+      setFeedback({ type: "error", text: readableError(error, "The course document could not be downloaded.") });
     }
   };
 
@@ -270,11 +270,11 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
         });
       } else {
         setFeedback({ type: "error", text: cloudMode
-          ? "That syllabus is not available in this account."
-          : "That syllabus is not available in this local profile." });
+          ? "That course document is not available in this account."
+          : "That course document is not available in this local profile." });
       }
     } catch (error) {
-      setFeedback({ type: "error", text: readableError(error, "The syllabus could not be removed.") });
+      setFeedback({ type: "error", text: readableError(error, "The course document could not be removed.") });
     } finally {
       setRemovingId(null);
     }
@@ -291,8 +291,8 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
         <div className="syllabus-page-title-group">
           <span className="syllabus-page-title-icon"><Icon name="book" size={25} /></span>
           <div>
-            <h2 id="syllabus-page-title">Syllabus library</h2>
-            <p>Keep course documents beside your semester plan.</p>
+            <h2 id="syllabus-page-title">Course document library</h2>
+            <p>Keep syllabi, assignment sheets, exam guides, and calendars beside your semester plan.</p>
           </div>
         </div>
         <span className="syllabus-page-file-count">{sortedSyllabi.length} {sortedSyllabi.length === 1 ? "file" : "files"}</span>
@@ -311,8 +311,8 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
       <section className="syllabus-page-upload" aria-labelledby="syllabus-page-upload-title">
         <div className="syllabus-page-section-heading">
           <div>
-            <h3 id="syllabus-page-upload-title">Add a syllabus</h3>
-            <p>Label the course, then select the original document.</p>
+            <h3 id="syllabus-page-upload-title">Add a course document</h3>
+            <p>Label the course, then select a syllabus or supporting document.</p>
           </div>
         </div>
 
@@ -365,7 +365,7 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
                 </span>
               ) : (
                 <span>
-                  <strong>Drop a syllabus here or choose a file</strong>
+                  <strong>Drop a course document here or choose a file</strong>
                   <small id={fileHelpId}>PDF, DOC, DOCX, or TXT</small>
                 </span>
               )}
@@ -378,7 +378,7 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
             type="submit"
           >
             <Icon name="upload" size={18} />
-            {uploading ? "Saving…" : (cloudMode ? "Save syllabus to account" : "Save syllabus locally")}
+            {uploading ? "Saving…" : (cloudMode ? "Save document to account" : "Save document locally")}
           </button>
         </form>
       </section>
@@ -398,7 +398,7 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
       <section className="syllabus-page-library" aria-labelledby="syllabus-page-library-title">
         <div className="syllabus-page-section-heading">
           <div>
-            <h3 id="syllabus-page-library-title">Saved syllabi</h3>
+            <h3 id="syllabus-page-library-title">Saved course documents</h3>
             <p>{cloudMode ? "Open or download a private account copy whenever you need it." : "Open or download a local copy whenever you need it."}</p>
           </div>
         </div>
@@ -440,7 +440,7 @@ export default function SyllabusPage({ cloudClient = null, profileId }) {
           <div className="syllabus-page-empty" role="status">
             <span className="syllabus-page-empty-icon"><Icon name="book" size={26} /></span>
             <div>
-              <strong>No syllabi saved yet</strong>
+              <strong>No course documents saved yet</strong>
               <p>{cloudMode
                 ? "Add a PDF, Word document, or text file to build your private synced course library."
                 : "Add a PDF, Word document, or text file to build this browser’s private course library."}</p>

@@ -9050,3 +9050,470 @@ button.agent-chat-alert-status[aria-expanded="true"] {
 .private-semester-import {
   cursor: pointer;
 }
+.semester-setup {
+  width: min(1040px, calc(100% - 28px));
+  margin: clamp(20px, 5vh, 54px) auto 72px;
+}
+
+.semester-setup-card {
+  display: grid;
+  gap: 20px;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgba(85, 111, 156, 0.2);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 24px 70px rgba(50, 77, 125, 0.12);
+}
+
+.semester-setup-heading {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.semester-setup-heading > span {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  color: #0d70ed;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #e4f3ff, #eeeaff);
+}
+
+.semester-setup-heading small,
+.semester-setup-review-heading small {
+  display: block;
+  margin-bottom: 7px;
+  color: #53657e;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.semester-setup-heading h2,
+.semester-setup-review-heading h3 {
+  margin: 0;
+  color: #101927;
+  line-height: 1.08;
+}
+
+.semester-setup-heading h2 {
+  font-size: clamp(1.75rem, 3.6vw, 2.55rem);
+}
+
+.semester-setup-heading p {
+  max-width: 68ch;
+  margin: 12px 0 0;
+  color: #56667c;
+  line-height: 1.6;
+}
+
+.semester-setup-privacy,
+.semester-setup-review-note {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: 15px 17px;
+  color: #335070;
+  border: 1px solid rgba(38, 125, 232, 0.14);
+  border-radius: 17px;
+  background: #f1f7ff;
+}
+
+.semester-setup-privacy p,
+.semester-setup-review-note {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.semester-setup-upload {
+  position: relative;
+  overflow: hidden;
+  border: 1.5px dashed #86b7ef;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(237, 247, 255, 0.96), rgba(245, 241, 255, 0.9));
+}
+
+.semester-setup-upload label {
+  min-height: 126px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 24px;
+  color: #0d67d5;
+  cursor: pointer;
+  text-align: left;
+}
+
+.semester-setup-upload label span,
+.semester-setup-files li > span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.semester-setup-upload small,
+.semester-setup-files small {
+  color: #677a91;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.semester-setup-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.semester-setup-files {
+  max-height: 260px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.semester-setup-files li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid rgba(85, 111, 156, 0.15);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.semester-setup-files strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.semester-setup-files button,
+.semester-setup-review-heading button {
+  padding: 8px 10px;
+  color: #456079;
+  border: 1px solid rgba(75, 101, 135, 0.18);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.semester-setup-consent {
+  display: grid;
+  gap: 14px;
+  padding: 17px;
+  border: 1px solid rgba(101, 81, 221, 0.2);
+  border-radius: 17px;
+  background: #f6f3ff;
+}
+
+.semester-setup-consent label {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  color: #403b62;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.semester-setup-consent input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.semester-setup-consent button,
+.semester-setup-primary {
+  min-height: 48px;
+  padding: 12px 18px;
+  color: #fff;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(105deg, #087bf2, #6252e7);
+  box-shadow: 0 10px 24px rgba(36, 102, 220, 0.22);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.semester-setup-consent button:disabled,
+.semester-setup-primary:disabled {
+  opacity: 0.48;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.semester-setup-primary {
+  width: 100%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+}
+
+.semester-setup-progress,
+.semester-setup-message {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin: 0;
+  padding: 12px 14px;
+  color: #3d5570;
+  border-radius: 13px;
+  background: #f1f6fc;
+  font-size: 0.84rem;
+}
+
+.semester-setup-message.is-error {
+  color: #9a343b;
+  background: #fff0f1;
+}
+
+.semester-setup-message.is-warning {
+  color: #735318;
+  background: #fff8e4;
+}
+
+.semester-setup-message.is-success {
+  color: #176847;
+  background: #ecfaf3;
+}
+
+.semester-setup-review {
+  display: grid;
+  gap: 18px;
+}
+
+.semester-setup-review-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.semester-setup-review-heading h3 {
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+
+.semester-setup-term-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.semester-setup-term-fields label {
+  display: grid;
+  gap: 7px;
+  color: #4b5f78;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.semester-setup-term-fields input {
+  min-width: 0;
+  height: 46px;
+  padding: 0 13px;
+  color: #152234;
+  border: 1px solid rgba(82, 105, 139, 0.22);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+}
+
+.semester-setup-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.semester-setup-summary span {
+  display: grid;
+  gap: 2px;
+  padding: 14px;
+  color: #5b6e86;
+  border-radius: 14px;
+  background: #f3f7fc;
+  font-size: 0.78rem;
+}
+
+.semester-setup-summary strong {
+  color: #15243a;
+  font-size: 1.35rem;
+}
+
+.semester-setup-course-review {
+  max-height: min(52vh, 620px);
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding-right: 5px;
+}
+
+.semester-setup-course-review > article {
+  display: grid;
+  gap: 13px;
+  padding: 18px;
+  border: 1px solid rgba(75, 101, 135, 0.16);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.semester-setup-course-review article > header {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.semester-setup-course-review article > header strong {
+  color: #0f66d5;
+  font-size: 1.05rem;
+}
+
+.semester-setup-course-review article > header span {
+  color: #2c3d55;
+  font-weight: 700;
+}
+
+.semester-setup-review-block {
+  display: grid;
+  gap: 5px;
+}
+
+.semester-setup-review-block > small {
+  color: #64768c;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.semester-setup-review-block p,
+.semester-setup-review-block ul {
+  margin: 0;
+  color: #42536a;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.semester-setup-review-block ul {
+  display: grid;
+  gap: 7px;
+  padding: 0;
+  list-style: none;
+}
+
+.semester-setup-review-block li {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f7f9fc;
+}
+
+.semester-setup-review-block li span {
+  flex: 0 0 auto;
+  color: #697b91;
+  font-size: 0.74rem;
+}
+
+.semester-setup-skipped {
+  padding: 14px 16px;
+  color: #76551b;
+  border-radius: 14px;
+  background: #fff7df;
+}
+
+.semester-setup-skipped p {
+  margin: 5px 0 0;
+  font-size: 0.78rem;
+}
+
+.semester-setup-backup {
+  padding-top: 4px;
+  color: #566a82;
+  font-size: 0.82rem;
+}
+
+.semester-setup-backup summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.semester-setup-backup p {
+  margin: 10px 0;
+}
+
+.semester-setup-backup label {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 9px 12px;
+  color: #1266c7;
+  border: 1px solid rgba(18, 102, 199, 0.22);
+  border-radius: 10px;
+  background: #f4f9ff;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+@media (max-width: 720px) {
+  .semester-setup {
+    width: min(100% - 16px, 1040px);
+    margin: 10px auto 88px;
+  }
+
+  .semester-setup-card {
+    gap: 16px;
+    padding: 19px 16px 24px;
+    border-radius: 22px;
+  }
+
+  .semester-setup-heading {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .semester-setup-heading > span {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .semester-setup-heading h2 {
+    font-size: 1.55rem;
+  }
+
+  .semester-setup-upload label {
+    min-height: 108px;
+    padding: 18px;
+  }
+
+  .semester-setup-term-fields,
+  .semester-setup-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .semester-setup-review-heading,
+  .semester-setup-review-block li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .semester-setup-review-block li span {
+    flex: auto;
+  }
+}

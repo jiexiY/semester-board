@@ -12,6 +12,7 @@ import {
 } from "./components/CloudSyncProvider";
 import GlassHeader from "./components/GlassHeader";
 import LocalProfileGate, { LocalProfileRestoring } from "./components/LocalProfileGate";
+import SemesterSetup from "./components/SemesterSetup";
 import SyllabusPage from "./components/SyllabusPage";
 import { AssignmentSheet, AttendanceSheet, ScheduleSheet } from "./components/GlassSheets";
 import TaskLegend from "./components/TaskLegend";
@@ -20,6 +21,7 @@ import { useAssistant } from "./hooks/useAssistant";
 import { useCloudAccount } from "./hooks/useCloudAccount";
 import { useCloudAssistant } from "./hooks/useCloudAssistant";
 import { useLocalProfile } from "./hooks/useLocalProfile";
+import { useSemesterGenerator } from "./hooks/useSemesterGenerator";
 import { useStudySourceLibrary } from "./hooks/useStudySourceLibrary";
 import { useStudyGenerator } from "./hooks/useStudyGenerator";
 import { Icon } from "./icons";
@@ -183,7 +185,7 @@ function isStandaloneStudyDeckRoute() {
 const DASHBOARD_PAGES = [
   { id: "semester", label: "Semester board", shortLabel: "Board", icon: "overview" },
   { id: "attendance", label: "Attendance", shortLabel: "Attendance", icon: "attendance" },
-  { id: "syllabi", label: "Syllabi", shortLabel: "Syllabi", icon: "book" },
+  { id: "syllabi", label: "Documents", shortLabel: "Docs", icon: "book" },
   { id: "assignments", label: "Assignment deck", shortLabel: "Tasks", icon: "document" },
 ];
 
@@ -220,31 +222,6 @@ function PageSwitcher({ activePage, onChange }) {
         </button>
       ))}
     </div>
-  );
-}
-
-function PrivateSemesterEmpty({ cloudMode, onImport }) {
-  const handleImport = async (event) => {
-    const [file] = event.target.files;
-    event.target.value = "";
-    if (file) await onImport(file);
-  };
-  return (
-    <section className="private-semester-empty" aria-labelledby="private-semester-empty-title">
-      <span className="private-semester-empty-icon"><Icon name="shield" size={28} /></span>
-      <div>
-        <span>Private by default</span>
-        <h2 id="private-semester-empty-title">This account has no semester data yet</h2>
-        <p>{cloudMode
-          ? "Import a private Semester Board JSON file. Its courses, deadlines, attendance setup, and source inventory will sync only to this signed-in account through Supabase row-level security."
-          : "Import a Semester Board JSON file to keep its courses and deadlines only in this browser profile."}</p>
-      </div>
-      <label className="primary-button private-semester-import">
-        <Icon name="upload" size={18} />Import private semester
-        <input accept="application/json,.json" className="visually-hidden" onChange={handleImport} type="file" />
-      </label>
-      <small>New users start empty. The public application bundle contains no personal course records.</small>
-    </section>
   );
 }
 
@@ -420,6 +397,7 @@ function SemesterDashboard({ onSignOut, profile }) {
     scheduleEvents,
     syncMode: profile.syncMode,
   });
+  const semesterGenerator = useSemesterGenerator({ aiStatus: assistant.cloud.status });
 
   const handleSignOut = async () => {
     setToast("Signing out on this device…");
@@ -597,7 +575,7 @@ function SemesterDashboard({ onSignOut, profile }) {
         profile={profile}
         syncStatus={cloudSync?.status || null}
         termLabel={term?.label || "My semester"}
-        weekLabel={weeks.length ? `Week ${currentWeekIndex + 1} · ${formatWeekRange(weeks[currentWeekIndex])}` : "Import your private semester"}
+        weekLabel={weeks.length ? `Week ${currentWeekIndex + 1} · ${formatWeekRange(weeks[currentWeekIndex])}` : "Upload course documents"}
       />
 
       <PageSwitcher activePage={activePage} onChange={changePage} />
@@ -607,7 +585,20 @@ function SemesterDashboard({ onSignOut, profile }) {
         <div className="dashboard-page-viewport">
           {activePage === "semester" ? (
             <div aria-labelledby="page-tab-semester" id="semester-page" role="tabpanel">
-              {!semesterReady ? <PrivateSemesterEmpty cloudMode={cloudMode} onImport={safeImport} /> : (
+              {!semesterReady ? (
+                <SemesterSetup
+                  ai={assistant.cloud}
+                  cloudClient={cloudSync?.client || null}
+                  cloudMode={cloudMode}
+                  generator={semesterGenerator}
+                  onImportBackup={safeImport}
+                  onSaveSemester={(nextSemester) => {
+                    dashboard.saveSemester(nextSemester);
+                    setToast(cloudMode ? "Private semester saved and queued to sync" : "Semester saved on this device");
+                  }}
+                  profileId={profile.id}
+                />
+              ) : (
                 <>
                   <TaskLegend />
 
