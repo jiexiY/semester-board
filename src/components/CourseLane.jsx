@@ -4,6 +4,7 @@ import { TASK_CATEGORY_META } from "./TaskLegend";
 
 function certaintyText(assignment) {
   if (assignment._overridden) return "Your date";
+  if (assignment.sourceStatus === "user-entered") return "Added by you";
   if (assignment.sourceStatus === "syllabus-only") return "Syllabus only";
   if (assignment.sourceStatus === "canvas-file-undated") return "Canvas file";
   if (assignment.dateCertainty === "confirmed") return "Confirmed";

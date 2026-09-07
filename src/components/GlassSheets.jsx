@@ -36,6 +36,7 @@ const WEEKDAYS = [
 function assignmentSourceStatus(assignment) {
   if (assignment?._overridden) return "Your verified local date";
   switch (assignment?.sourceStatus) {
+    case "user-entered": return "Added by you";
     case "canvas-confirmed": return "Canvas confirmed";
     case "canvas-undated": return "Canvas — date not published";
     case "canvas-file-undated": return "Canvas files — date not published";
@@ -371,7 +372,7 @@ export function ScheduleSheet({ course, courseConfig, onClose, onSave }) {
             <span><Icon name="attendance" size={18} /></span>
             <div>
               <h3 id={`office-hours-${course.id}`}>Office hours</h3>
-              <p>Audited from the supplied course syllabus</p>
+              <p>{officeHours.status === "user" ? "Entered by you during setup" : "Audited from the supplied course syllabus"}</p>
             </div>
           </header>
 
@@ -401,7 +402,7 @@ export function ScheduleSheet({ course, courseConfig, onClose, onSave }) {
             </div>
           )}
 
-          <p className="office-hours-time-note"><Icon name="info" size={14} />Times are shown exactly as written; the course sources do not state a time zone.</p>
+          <p className="office-hours-time-note"><Icon name="info" size={14} />{officeHours.status === "user" ? "Times are shown exactly as you entered them." : "Times are shown exactly as written; the course sources do not state a time zone."}</p>
         </section>
 
         <button className="primary-button" disabled={canEditCustomSchedule && !customPatternsComplete} onClick={save} type="button"><Icon name="check" size={18} />{canEditCustomSchedule || selectablePatterns.length ? "Save schedule" : "Done"}</button>

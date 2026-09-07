@@ -22,6 +22,7 @@ export function formatOfficeHoursEntry(entry = {}) {
 }
 
 export function officeHoursStatusLabel(status) {
+  if (status === "user") return "Added by you";
   if (status === "confirmed") return "Syllabus confirmed";
   if (status === "tbd") return "Not yet specified";
   return "Not stated";

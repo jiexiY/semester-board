@@ -588,6 +588,10 @@ function SemesterDashboard({ onSignOut, profile }) {
                   cloudMode={cloudMode}
                   onImportBackup={safeImport}
                   onOpenDocuments={() => changePage("syllabi")}
+                  onSaveSemester={(nextSemester) => {
+                    dashboard.saveSemester(nextSemester);
+                    setToast(cloudMode ? "Semester created and queued to sync" : "Semester created on this device");
+                  }}
                 />
               ) : (
                 <>

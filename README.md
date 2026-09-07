@@ -1,6 +1,6 @@
 # Semester Board
 
-A React/Vite semester dashboard with an aligned daily board, assignment and attendance tracking, private cross-device accounts, a synced course-document library, structured semester-data import, a standalone Study Deck, an on-device schedule helper, optional cloud AI chat, and optional closed-tab Web Push reminders. The public app starts with no courses or coursework. If Supabase is not configured, the device-only profile flow remains available without pretending that it syncs.
+A React/Vite semester dashboard with an aligned daily board, guided semester setup, assignment and attendance tracking, private cross-device accounts, a synced course-document library, optional backup import, a standalone Study Deck, an on-device schedule helper, optional cloud AI chat, and optional closed-tab Web Push reminders. The public app starts with no courses or coursework. If Supabase is not configured, the device-only profile flow remains available without pretending that it syncs.
 
 ## What runs where
 
@@ -8,7 +8,8 @@ A React/Vite semester dashboard with an aligned daily board, assignment and atte
 | --- | --- | --- |
 | Account identity | Supabase Auth | Email, password handled by Supabase Auth, and display name |
 | Progress and attendance | Supabase Postgres + owner-scoped browser cache | Attendance/check-in records and notes, assignment completion, verified date overrides, and schedule choices |
-| Semester data import | Private Supabase row + owner-scoped browser cache | A user-selected, validated Semester Board JSON file containing courses, schedules, office hours, coursework, and term dates |
+| Guided semester setup | Browser UI, then a private Supabase row or device-only profile | Nothing beyond the account's normal private dashboard sync; setup uses no AI provider |
+| Backup import | Private Supabase row + owner-scoped browser cache | A user-selected, validated Semester Board JSON backup when the user chooses this optional path |
 | Course documents | Private Supabase Storage + owner-scoped metadata | Syllabi, assignment sheets, exam guides, calendars, and their course/file metadata when the user uploads them directly |
 | Private lookup | Supabase Postgres for cloud accounts; browser for device-only profiles | Saved assistant history for a cloud account; no AI provider request in Private lookup mode |
 | Semester Chat | Vercel Function + AI Gateway, only after consent | Chat messages plus a minimized snapshot of course names, class times/rooms, upcoming work/exams, aggregate attendance counts, and reminder times |
@@ -29,7 +30,7 @@ The assistant is software, not a human support agent or an unrestricted AI. It c
 - Notification permission must come from a user gesture. If the browser reports `Denied`, the app cannot override it; the user must change the site permission and reload.
 - On supported Apple mobile devices, Web Push generally requires installing the site to the Home Screen first.
 - The website and its assistant do not poll Canvas. A user may enter or privately import records they have independently verified, but Semester Board does not claim that those records are current unless the account owner maintains them.
-- The blank board accepts structured Semester Board JSON and validates it before saving. Uploaded PDF and Word documents remain private reference files; they do not automatically become schedules or deadlines, and semester setup makes no AI request.
+- New users create a semester directly in the guided form with dates, courses, optional class schedules, office hours, assignments, and exams. JSON is only an optional existing-backup path. Uploaded PDF and Word documents remain private reference files; they do not automatically become schedules or deadlines, and semester setup makes no AI request.
 - The public source tree and client bundle contain only an empty semester template. Course names, assignments, schedules, source references, and Canvas evidence belong to the signed-in account state and are not public defaults.
 - `noindex` discourages search indexing; it is not access control. Account records and uploaded files depend on Supabase Auth, owner-scoped Row Level Security, and private Storage policies for access control.
 - The signed cloud-consent cookie proves consent, not identity. Semester Chat uses a server-allowlisted model, is bounded to 12 text messages / 12,000 chat characters / 32 KiB / 600 output tokens plus a 64-fact / 16,000-character minimized board snapshot, has no provider retry, and uses best-effort per-IP and per-consent limits in each warm function instance.

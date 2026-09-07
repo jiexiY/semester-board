@@ -27,6 +27,7 @@ test("office-hours formatting distinguishes confirmed, appointment, and TBD sche
   assert.equal(formatOfficeHoursEntry({ status: "not_stated" }), "Not stated in supplied syllabus");
   assert.equal(officeHoursStatusLabel("confirmed"), "Syllabus confirmed");
   assert.equal(officeHoursStatusLabel("tbd"), "Not yet specified");
+  assert.equal(officeHoursStatusLabel("user"), "Added by you");
 });
 
 test("office hours never become class meetings or attendance check-ins", () => {
