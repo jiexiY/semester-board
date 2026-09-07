@@ -21,7 +21,6 @@ import { useAssistant } from "./hooks/useAssistant";
 import { useCloudAccount } from "./hooks/useCloudAccount";
 import { useCloudAssistant } from "./hooks/useCloudAssistant";
 import { useLocalProfile } from "./hooks/useLocalProfile";
-import { useSemesterGenerator } from "./hooks/useSemesterGenerator";
 import { useStudySourceLibrary } from "./hooks/useStudySourceLibrary";
 import { useStudyGenerator } from "./hooks/useStudyGenerator";
 import { Icon } from "./icons";
@@ -397,7 +396,6 @@ function SemesterDashboard({ onSignOut, profile }) {
     scheduleEvents,
     syncMode: profile.syncMode,
   });
-  const semesterGenerator = useSemesterGenerator({ aiStatus: assistant.cloud.status });
 
   const handleSignOut = async () => {
     setToast("Signing out on this device…");
@@ -575,7 +573,7 @@ function SemesterDashboard({ onSignOut, profile }) {
         profile={profile}
         syncStatus={cloudSync?.status || null}
         termLabel={term?.label || "My semester"}
-        weekLabel={weeks.length ? `Week ${currentWeekIndex + 1} · ${formatWeekRange(weeks[currentWeekIndex])}` : "Upload course documents"}
+        weekLabel={weeks.length ? `Week ${currentWeekIndex + 1} · ${formatWeekRange(weeks[currentWeekIndex])}` : "Upload semester data"}
       />
 
       <PageSwitcher activePage={activePage} onChange={changePage} />
@@ -587,16 +585,9 @@ function SemesterDashboard({ onSignOut, profile }) {
             <div aria-labelledby="page-tab-semester" id="semester-page" role="tabpanel">
               {!semesterReady ? (
                 <SemesterSetup
-                  ai={assistant.cloud}
-                  cloudClient={cloudSync?.client || null}
                   cloudMode={cloudMode}
-                  generator={semesterGenerator}
                   onImportBackup={safeImport}
-                  onSaveSemester={(nextSemester) => {
-                    dashboard.saveSemester(nextSemester);
-                    setToast(cloudMode ? "Private semester saved and queued to sync" : "Semester saved on this device");
-                  }}
-                  profileId={profile.id}
+                  onOpenDocuments={() => changePage("syllabi")}
                 />
               ) : (
                 <>

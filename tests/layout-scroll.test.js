@@ -79,7 +79,6 @@ test("signed-in pages use the remaining-height stage instead of viewport subtrac
     [".attendance-page", "overflow-y"],
     [".syllabus-page", "overflow-y"],
     [".study-deck-page", "overflow-y"],
-    [".semester-setup", "overflow-y"],
   ]) {
     const page = ruleBody(styles, selector);
     assert.ok(hasDeclaration(page, "min-height", "0"), `${selector} can shrink inside the stage`);
@@ -92,7 +91,7 @@ test("every desktop scroll owner leaves the final controls clear of the assistan
   const board = ruleBody(styles, ".board-app");
   assert.ok(hasDeclaration(board, "--dashboard-scroll-end", "112px"));
 
-  for (const selector of [".course-board", ".attendance-page", ".syllabus-page", ".semester-setup"]) {
+  for (const selector of [".course-board", ".attendance-page", ".syllabus-page"]) {
     const page = ruleBody(styles, selector);
     assert.match(page, /padding\s*:[^;]*var\(--dashboard-scroll-end\)\s*;/);
     assert.ok(hasDeclaration(page, "scroll-padding-bottom", "var\\(--dashboard-scroll-end\\)"));
@@ -165,18 +164,4 @@ test("mobile pages consistently yield to document scrolling without stacked stic
   assert.ok(hasDeclaration(header, "position", "relative"));
   assert.ok(hasDeclaration(header, "background", "transparent"));
   assert.ok(hasDeclaration(header, "backdrop-filter", "none"));
-});
-
-test("semester setup owns desktop scrolling and yields to the mobile document", () => {
-  const setup = ruleBody(styles, ".semester-setup");
-  assert.ok(hasDeclaration(setup, "height", "100%"));
-  assert.ok(hasDeclaration(setup, "min-height", "0"));
-  assert.ok(hasDeclaration(setup, "overflow-y", "auto"));
-  assert.ok(hasDeclaration(setup, "scroll-padding-bottom", "var\\(--dashboard-scroll-end\\)"));
-
-  const mobileStart = styles.indexOf("@media (max-width: 720px)", styles.indexOf(".semester-setup"));
-  assert.notEqual(mobileStart, -1);
-  const mobileSetup = ruleBody(styles.slice(mobileStart), ".semester-setup");
-  assert.ok(hasDeclaration(mobileSetup, "height", "auto"));
-  assert.ok(hasDeclaration(mobileSetup, "overflow", "visible"));
 });

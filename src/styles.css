@@ -9530,3 +9530,164 @@ button.agent-chat-alert-status[aria-expanded="true"] {
     flex: auto;
   }
 }
+
+/* Compact, deterministic semester import. Course documents are managed separately. */
+.semester-setup {
+  width: min(760px, calc(100% - 28px));
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  padding: 16px 0 22px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.semester-setup-card {
+  width: 100%;
+  display: grid;
+  gap: 14px;
+  padding: clamp(20px, 3vw, 30px);
+  border-radius: 26px;
+}
+
+.semester-setup-heading {
+  grid-template-columns: 50px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.semester-setup-heading > span {
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+}
+
+.semester-setup-heading small {
+  margin-bottom: 5px;
+}
+
+.semester-setup-heading h2 {
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+}
+
+.semester-setup-heading p {
+  margin-top: 8px;
+  line-height: 1.48;
+}
+
+.semester-data-import,
+.semester-setup-secondary {
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 15px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.semester-data-import {
+  color: #fff;
+  border: 0;
+  background: linear-gradient(105deg, #087bf2, #6252e7);
+  box-shadow: 0 10px 24px rgba(36, 102, 220, 0.2);
+}
+
+.semester-data-import.is-busy {
+  opacity: 0.64;
+  cursor: wait;
+}
+
+.semester-data-import span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.semester-data-import strong {
+  font-weight: 820;
+}
+
+.semester-data-import small {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.73rem;
+  font-weight: 650;
+}
+
+.semester-setup-secondary {
+  justify-content: center;
+  min-height: 46px;
+  color: #145fae;
+  border: 1px solid rgba(35, 106, 183, 0.2);
+  background: #f7fbff;
+  font-weight: 760;
+}
+
+.semester-setup-boundary {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  color: #4b5f78;
+  border-radius: 14px;
+  background: #f2f6fb;
+}
+
+.semester-setup-boundary > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.semester-setup-boundary p {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .semester-setup {
+    width: min(100% - 16px, 760px);
+    height: auto;
+    min-height: 0;
+    display: block;
+    padding: 10px 0 90px;
+    overflow: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
+  }
+
+  .semester-setup-card {
+    gap: 13px;
+    padding: 18px 15px 20px;
+    border-radius: 21px;
+  }
+
+  .semester-setup-heading {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .semester-setup-heading > span {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+  }
+
+  .semester-setup-heading h2 {
+    font-size: 1.45rem;
+  }
+
+  .semester-setup-heading p {
+    font-size: 0.86rem;
+  }
+
+  .semester-data-import {
+    align-items: flex-start;
+  }
+}

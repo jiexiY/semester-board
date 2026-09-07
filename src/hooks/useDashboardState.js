@@ -477,17 +477,6 @@ export function useDashboardState(profileId) {
     });
   }, [mutate]);
 
-  const saveSemester = useCallback((semester) => {
-    const normalizedSemester = normalizeSemesterState(semester);
-    setState((current) => ({
-      ...current,
-      schemaVersion: SCHEMA_VERSION,
-      semester: normalizedSemester,
-      courseConfig: normalizeCourseConfig(current.courseConfig, normalizedSemester),
-      updatedAt: new Date().toISOString(),
-    }));
-  }, [setState]);
-
   const importBackup = useCallback(async (file) => {
     const parsed = JSON.parse(await file.text());
     const privateSemester = privateSemesterFromImport(parsed);
@@ -531,7 +520,6 @@ export function useDashboardState(profileId) {
     saveAssignmentOverride,
     saveCourseConfig,
     saveStudyDeck,
-    saveSemester,
     importBackup,
     exportBackup,
     resetProgress,
