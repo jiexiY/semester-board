@@ -9052,7 +9052,15 @@ button.agent-chat-alert-status[aria-expanded="true"] {
 }
 .semester-setup {
   width: min(1040px, calc(100% - 28px));
-  margin: clamp(20px, 5vh, 54px) auto 72px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  margin: 0 auto;
+  padding: clamp(20px, 5vh, 54px) 0 var(--dashboard-scroll-end);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: var(--dashboard-scroll-end);
+  scrollbar-gutter: stable;
 }
 
 .semester-setup-card {
@@ -9473,7 +9481,12 @@ button.agent-chat-alert-status[aria-expanded="true"] {
 @media (max-width: 720px) {
   .semester-setup {
     width: min(100% - 16px, 1040px);
-    margin: 10px auto 88px;
+    height: auto;
+    margin: 0 auto;
+    padding: 10px 0 88px;
+    overflow: visible;
+    overscroll-behavior: auto;
+    scrollbar-gutter: auto;
   }
 
   .semester-setup-card {
