@@ -33,3 +33,13 @@ test("assignment uploads snapshot the FileList before clearing the picker", asyn
   assert.notEqual(snapshotIndex, -1);
   assert.ok(clearIndex > snapshotIndex);
 });
+
+test("each assignment separates assistant work from the user's documents", async () => {
+  const page = await readFile(new URL("../src/components/AssignmentDeckPage.jsx", import.meta.url), "utf8");
+  assert.match(page, /const ASSISTANT_DOCUMENT_KIND = "ready-for-review"/u);
+  assert.match(page, /<h4[^>]*>Assistant work<\/h4>/u);
+  assert.match(page, /<h4[^>]*>Your documents<\/h4>/u);
+  assert.match(page, /saveFiles\(event, ASSISTANT_DOCUMENT_KIND\)/u);
+  assert.match(page, /file\.documentKind === ASSISTANT_DOCUMENT_KIND/u);
+  assert.match(page, /file\.documentKind !== ASSISTANT_DOCUMENT_KIND/u);
+});

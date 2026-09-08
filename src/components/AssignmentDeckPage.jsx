@@ -57,36 +57,65 @@ const DOCUMENT_KIND_OPTIONS = [
   ["ready-for-review", "Ready for my review"],
 ];
 
+const USER_DOCUMENT_KIND_OPTIONS = DOCUMENT_KIND_OPTIONS.filter(([value]) => value !== "ready-for-review");
+const ASSISTANT_DOCUMENT_KIND = "ready-for-review";
+
+function AssignmentFileList({ emptyMessage, files, onDownload, onRemove }) {
+  return files.length ? <ul>{files.map((file) => (
+    <li key={file.id}>
+      <span className="assignment-file-type">{file.typeLabel}</span>
+      <div><strong>{file.fileName}</strong><small>{DOCUMENT_KIND_OPTIONS.find(([value]) => value === file.documentKind)?.[1] || "Working draft"} · {file.sizeLabel} · {file.storageScope}</small></div>
+      <button onClick={() => onDownload(file)} type="button">Download</button>
+      <button className="is-danger" onClick={() => { if (window.confirm(`Remove “${file.fileName}” from this assignment?`)) void onRemove(file); }} type="button">Remove</button>
+    </li>
+  ))}</ul> : <p>{emptyMessage}</p>;
+}
+
 function AssignmentFilePanel({ assignment, files, onAddFiles, onDownload, onRemove }) {
   const [documentKind, setDocumentKind] = useState("working-draft");
-  const inputId = `assignment-file-${assignment.id.replace(/[^A-Za-z0-9_-]/gu, "-")}`;
-  const handleFiles = async (event) => {
+  const normalizedAssignmentId = assignment.id.replace(/[^A-Za-z0-9_-]/gu, "-");
+  const inputId = `assignment-file-${normalizedAssignmentId}`;
+  const assistantInputId = `assistant-work-${normalizedAssignmentId}`;
+  const assistantFiles = files.filter((file) => file.documentKind === ASSISTANT_DOCUMENT_KIND);
+  const userFiles = files.filter((file) => file.documentKind !== ASSISTANT_DOCUMENT_KIND);
+  const saveFiles = async (event, kind) => {
     const selected = Array.from(event.target.files || []);
     event.target.value = "";
     if (!selected.length) return;
     await onAddFiles(selected, {
       assignmentId: assignment.id,
       courseId: assignment.courseId,
-      documentKind,
+      documentKind: kind,
     });
   };
   return (
     <details className="assignment-file-panel">
-      <summary><Icon name="upload" size={15} />Assignment documents <span>{files.length}</span></summary>
+      <summary><Icon name="upload" size={15} />Work files <span>{files.length}</span></summary>
       <div className="assignment-file-panel-body">
-        <div className="assignment-file-upload-row">
-          <label><span>Document role</span><select onChange={(event) => setDocumentKind(event.target.value)} value={documentKind}>{DOCUMENT_KIND_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          <input accept={ASSIGNMENT_FILE_ACCEPT} className="visually-hidden" id={inputId} multiple onChange={handleFiles} type="file" />
-          <label className="assignment-file-upload" htmlFor={inputId}><Icon name="upload" size={16} />Upload DOCX, DOC, PDF, or TXT</label>
-        </div>
-        {files.length ? <ul>{files.map((file) => (
-          <li key={file.id}>
-            <span className="assignment-file-type">{file.typeLabel}</span>
-            <div><strong>{file.fileName}</strong><small>{DOCUMENT_KIND_OPTIONS.find(([value]) => value === file.documentKind)?.[1] || "Working draft"} · {file.sizeLabel} · {file.storageScope}</small></div>
-            <button onClick={() => onDownload(file)} type="button">Download</button>
-            <button className="is-danger" onClick={() => { if (window.confirm(`Remove “${file.fileName}” from this assignment?`)) void onRemove(file); }} type="button">Remove</button>
-          </li>
-        ))}</ul> : <p>No document is attached to this assignment yet.</p>}
+        <section className="assignment-file-lane assistant-work-lane" aria-labelledby={`assistant-work-heading-${normalizedAssignmentId}`}>
+          <header>
+            <div><span>Prepared for you</span><h4 id={`assistant-work-heading-${normalizedAssignmentId}`}>Assistant work</h4></div>
+            <p>Drafts and study materials I prepare appear here. Review them before using or submitting anything.</p>
+          </header>
+          <div className="assignment-file-upload-row">
+            <input accept={ASSIGNMENT_FILE_ACCEPT} className="visually-hidden" id={assistantInputId} multiple onChange={(event) => saveFiles(event, ASSISTANT_DOCUMENT_KIND)} type="file" />
+            <label className="assignment-file-upload is-assistant" htmlFor={assistantInputId}><Icon name="upload" size={16} />Upload assistant work</label>
+          </div>
+          <AssignmentFileList emptyMessage="No assistant work has been added yet." files={assistantFiles} onDownload={onDownload} onRemove={onRemove} />
+        </section>
+
+        <section className="assignment-file-lane user-document-lane" aria-labelledby={`your-documents-heading-${normalizedAssignmentId}`}>
+          <header>
+            <div><span>Your sources and drafts</span><h4 id={`your-documents-heading-${normalizedAssignmentId}`}>Your documents</h4></div>
+            <p>Add assignment instructions, professor notes, references, or your own draft.</p>
+          </header>
+          <div className="assignment-file-upload-row">
+            <label><span>Document role</span><select aria-label={`Document role for ${assignment.title}`} onChange={(event) => setDocumentKind(event.target.value)} value={documentKind}>{USER_DOCUMENT_KIND_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <input accept={ASSIGNMENT_FILE_ACCEPT} className="visually-hidden" id={inputId} multiple onChange={(event) => saveFiles(event, documentKind)} type="file" />
+            <label className="assignment-file-upload" htmlFor={inputId}><Icon name="upload" size={16} />Upload your document</label>
+          </div>
+          <AssignmentFileList emptyMessage="No personal document is attached yet." files={userFiles} onDownload={onDownload} onRemove={onRemove} />
+        </section>
       </div>
     </details>
   );
