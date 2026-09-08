@@ -25,3 +25,11 @@ test("assignment upload UI and grade operations are account-entitlement gated", 
   assert.match(page, /files=\{gradeOpsEnabled\s*\?/u);
   assert.match(app, /enabled:\s*accountFeatures\.gradeOpsEnabled/u);
 });
+
+test("assignment uploads snapshot the FileList before clearing the picker", async () => {
+  const page = await readFile(new URL("../src/components/AssignmentDeckPage.jsx", import.meta.url), "utf8");
+  const snapshotIndex = page.indexOf("Array.from(event.target.files || [])");
+  const clearIndex = page.indexOf('event.target.value = ""');
+  assert.notEqual(snapshotIndex, -1);
+  assert.ok(clearIndex > snapshotIndex);
+});

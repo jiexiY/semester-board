@@ -61,9 +61,9 @@ function AssignmentFilePanel({ assignment, files, onAddFiles, onDownload, onRemo
   const [documentKind, setDocumentKind] = useState("working-draft");
   const inputId = `assignment-file-${assignment.id.replace(/[^A-Za-z0-9_-]/gu, "-")}`;
   const handleFiles = async (event) => {
-    const selected = event.target.files;
+    const selected = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!selected?.length) return;
+    if (!selected.length) return;
     await onAddFiles(selected, {
       assignmentId: assignment.id,
       courseId: assignment.courseId,
