@@ -6,6 +6,7 @@ import {
   MAX_CUSTOM_DECK_BYTES,
   MAX_CUSTOM_DECKS,
   MAX_CUSTOM_DECK_TOTAL_BYTES,
+  normalizeAcademicCoach,
   normalizeAssignmentWorkflow,
   normalizeDashboardState,
   normalizeStudyDeckState,
@@ -19,6 +20,25 @@ test("dashboard backups include an isolated study-deck state", () => {
   assert.deepEqual(state.studyDeck.courseSpaces, []);
   assert.equal(state.studyDeck.selectedCourseSpaceId, null);
   assert.deepEqual(state.assignmentWorkflow, { byAssignment: {} });
+  assert.deepEqual(state.academicCoach, { chapterByCourse: {}, completedChecks: {} });
+});
+
+test("academic coach state syncs bounded private check-ins and chapter focus", () => {
+  const normalized = normalizeAcademicCoach({
+    completedChecks: {
+      "weekly:course-a:2026-09-07": "2026-09-07T20:00:00Z",
+      "bad/check": "2026-09-07T20:00:00Z",
+      malformed: "not-a-date",
+    },
+    chapterByCourse: {
+      "course-a": "  Weber — rationalization  ",
+      "bad/course": "unsafe",
+    },
+  });
+  assert.deepEqual(normalized.completedChecks, {
+    "weekly:course-a:2026-09-07": "2026-09-07T20:00:00.000Z",
+  });
+  assert.deepEqual(normalized.chapterByCourse, { "course-a": "Weber — rationalization" });
 });
 
 test("assignment workflow keeps completion separate from Canvas submission", () => {

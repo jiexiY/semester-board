@@ -76,7 +76,7 @@ export function AssignmentSheet({ assignment, course, onClose, onSave }) {
   useEffect(() => {
     setDate(assignment?.date || "");
     setTime(assignment?.time || "");
-  }, [assignment]);
+  }, [assignment?.id]);
 
   if (!assignment || !course) return null;
   const sourceDate = assignment._sourceDate || assignment.date;

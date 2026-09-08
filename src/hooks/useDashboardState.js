@@ -7,7 +7,7 @@ import {
   privateSemesterFromImport,
 } from "../lib/semesterState.js";
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const STUDY_METHODS = new Set(["flashcards", "fill", "true-false", "multiple-answer"]);
 const MAX_IDENTIFIER_LENGTH = 128;
@@ -19,6 +19,9 @@ const MAX_REVISION = 1_000_000_000;
 const MAX_ASSIGNMENT_WORKFLOW_ENTRIES = 256;
 const WORK_STATUSES = new Set(["not-started", "in-progress", "completed"]);
 const SUBMISSION_STATUSES = new Set(["not-marked", "not-submitted", "submitted", "missed"]);
+const MAX_COACH_CHECKS = 600;
+const COACH_CHECK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,219}$/u;
+const COACH_COURSE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 
 export const MAX_CUSTOM_DECK_BYTES = 700 * 1024;
 export const MAX_CUSTOM_DECK_TOTAL_BYTES = 720 * 1024;
@@ -50,6 +53,10 @@ export const DEFAULT_DASHBOARD_STATE = {
     byAssignment: {},
   },
   assignmentOverrides: {},
+  academicCoach: {
+    chapterByCourse: {},
+    completedChecks: {},
+  },
   courseConfig: {
     sectionByCourse: {},
     customMeetingsByCourse: {},
@@ -164,6 +171,25 @@ export function normalizeAssignmentWorkflow(value) {
     if (Object.keys(byAssignment).length >= MAX_ASSIGNMENT_WORKFLOW_ENTRIES) break;
   }
   return { byAssignment };
+}
+
+export function normalizeAcademicCoach(value) {
+  const source = isRecord(value) ? value : {};
+  const completedChecks = {};
+  for (const [rawId, rawDate] of Object.entries(isRecord(source.completedChecks) ? source.completedChecks : {}).slice(0, MAX_COACH_CHECKS * 2)) {
+    const id = String(rawId || "").trim();
+    const completedAt = normalizeDate(rawDate);
+    if (!COACH_CHECK_ID_PATTERN.test(id) || !completedAt) continue;
+    completedChecks[id] = completedAt;
+    if (Object.keys(completedChecks).length >= MAX_COACH_CHECKS) break;
+  }
+  const chapterByCourse = {};
+  for (const [rawCourseId, rawChapter] of Object.entries(isRecord(source.chapterByCourse) ? source.chapterByCourse : {}).slice(0, MAX_COURSE_SPACES * 2)) {
+    const courseId = normalizeIdentifier(rawCourseId);
+    const chapter = normalizeText(rawChapter, 160);
+    if (courseId && COACH_COURSE_ID_PATTERN.test(courseId) && chapter) chapterByCourse[courseId] = chapter;
+  }
+  return { chapterByCourse, completedChecks };
 }
 
 function safeDeckEntries(value, limit = MAX_DECK_STATE_KEYS) {
@@ -357,7 +383,7 @@ export function normalizeStudyDeckState(value) {
 }
 
 export function normalizeDashboardState(value) {
-  if (!isRecord(value) || ![1, SCHEMA_VERSION].includes(value.schemaVersion)) {
+  if (!isRecord(value) || ![1, 2, SCHEMA_VERSION].includes(value.schemaVersion)) {
     throw new Error("This backup is not a supported Semester Board backup.");
   }
   const semester = value.semester ? normalizeSemesterState(value.semester) : DEFAULT_SEMESTER_STATE;
@@ -378,6 +404,7 @@ export function normalizeDashboardState(value) {
     completedAssignments,
     assignmentWorkflow,
     assignmentOverrides: isRecord(value.assignmentOverrides) ? value.assignmentOverrides : {},
+    academicCoach: normalizeAcademicCoach(value.academicCoach),
     courseConfig: normalizeCourseConfig(value.courseConfig, semester),
     studyDeck: normalizeStudyDeckState(value.studyDeck),
   };
@@ -463,6 +490,38 @@ export function useDashboardState(profileId) {
     }));
   }, [mutate]);
 
+  const saveAcademicCoachCheck = useCallback((checkId, completed) => {
+    const normalizedId = String(checkId || "").trim();
+    if (!COACH_CHECK_ID_PATTERN.test(normalizedId)) return;
+    mutate((current) => {
+      const completedChecks = { ...current.academicCoach?.completedChecks };
+      if (completed) completedChecks[normalizedId] = new Date().toISOString();
+      else delete completedChecks[normalizedId];
+      return {
+        ...current,
+        academicCoach: normalizeAcademicCoach({
+          ...current.academicCoach,
+          completedChecks,
+        }),
+      };
+    });
+  }, [mutate]);
+
+  const saveAcademicCoachChapter = useCallback((courseId, chapter) => {
+    const normalizedCourseId = normalizeIdentifier(courseId);
+    if (!normalizedCourseId) return;
+    mutate((current) => ({
+      ...current,
+      academicCoach: normalizeAcademicCoach({
+        ...current.academicCoach,
+        chapterByCourse: {
+          ...current.academicCoach?.chapterByCourse,
+          [normalizedCourseId]: chapter,
+        },
+      }),
+    }));
+  }, [mutate]);
+
   const saveCourseConfig = useCallback((courseConfig) => {
     mutate((current) => ({ ...current, courseConfig: { ...current.courseConfig, ...courseConfig } }));
   }, [mutate]);
@@ -529,6 +588,8 @@ export function useDashboardState(profileId) {
     toggleAssignment,
     saveAssignmentWorkflow,
     saveAssignmentOverride,
+    saveAcademicCoachCheck,
+    saveAcademicCoachChapter,
     saveCourseConfig,
     saveStudyDeck,
     saveSemester,

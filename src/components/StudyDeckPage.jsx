@@ -853,6 +853,28 @@ function formatSourceSize(bytes) {
   return `${Math.round(size / (1024 * 102.4)) / 10} MiB`;
 }
 
+function studyCoachRequestFromLocation() {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("coach") !== "1") return null;
+  const focus = safePublicText(params.get("focus"), "", 240);
+  const courseCode = safePublicText(params.get("courseCode"), "", 32);
+  const courseId = safePublicText(params.get("courseId"), "", 128);
+  const courseName = safePublicText(params.get("courseName"), courseCode || "Course", 80);
+  const questions = Number(params.get("questions"));
+  const challenge = Number(params.get("challenge"));
+  return {
+    auto: params.get("auto") === "1",
+    challenge: Number.isInteger(challenge) && challenge >= 1 && challenge <= 10 ? challenge : 6,
+    courseCode,
+    courseId,
+    courseName,
+    focus,
+    mode: params.get("mode") === "practice" ? "practice" : "quiz",
+    questions: Number.isInteger(questions) && questions >= 1 && questions <= 8 ? questions : 8,
+  };
+}
+
 function GenerationSetup({ activeCourse, onChange, settings }) {
   const focusId = useId();
   const countId = useId();
@@ -1443,6 +1465,9 @@ export default function StudyDeckPage({
   const [importNotice, setImportNotice] = useState(null);
   const [generationNotice, setGenerationNotice] = useState(null);
   const [retryTarget, setRetryTarget] = useState(null);
+  const coachRequest = useMemo(studyCoachRequestFromLocation, []);
+  const coachSelectionRef = useRef("");
+  const coachGenerationRef = useRef("");
 
   const savedState = studyDeckState && typeof studyDeckState === "object"
     ? { ...EMPTY_STUDY_DECK_STATE, ...studyDeckState }
@@ -1835,6 +1860,65 @@ export default function StudyDeckPage({
       setGenerationNotice({ type: "error", text: error instanceof Error ? error.message : "Study content could not be generated." });
     }
   };
+
+  useEffect(() => {
+    if (!coachRequest || !activeCourses.length) return;
+    const target = activeCourses.find((course) => course.id === coachRequest.courseId)
+      || activeCourses.find((course) => String(course.code || "").toLocaleLowerCase("en-US") === coachRequest.courseCode.toLocaleLowerCase("en-US"));
+    const token = `${coachRequest.courseId}:${coachRequest.courseCode}:${coachRequest.focus}`;
+    if (!target) {
+      if (coachSelectionRef.current !== token) {
+        coachSelectionRef.current = token;
+        setGenerationNotice({ type: "error", text: `${coachRequest.courseCode || coachRequest.courseName} does not have a Study Deck course space yet. Create it, upload course sources, then reopen this knowledge check.` });
+        setTool("sources");
+      }
+      return;
+    }
+    const requestedSettings = {
+      challenge: coachRequest.challenge,
+      focus: coachRequest.focus || `Help me study ${target.code || target.name} for this semester.`,
+      questionCount: coachRequest.questions,
+    };
+    const currentSettings = savedState.generationSettingsByCourse?.[target.id];
+    const alreadyApplied = savedState.selectedCourseSpaceId === target.id
+      && currentSettings?.focus === requestedSettings.focus
+      && Number(currentSettings?.questionCount) === requestedSettings.questionCount
+      && Number(currentSettings?.challenge) === requestedSettings.challenge;
+    if (alreadyApplied || coachSelectionRef.current === token) return;
+    coachSelectionRef.current = token;
+    persistStudyDeck((current) => ({
+      ...current,
+      selectedCourseSpaceId: target.id,
+      generationSettingsByCourse: {
+        ...current.generationSettingsByCourse,
+        [target.id]: requestedSettings,
+      },
+    }));
+    setTool("sources");
+    setGenerationNotice({ type: "success", text: `${coachRequest.courseCode || target.code || target.name} knowledge-check focus loaded. The quiz will start after this course's private sources finish loading.` });
+  }, [activeCourses, coachRequest, persistStudyDeck, savedState.generationSettingsByCourse, savedState.selectedCourseSpaceId]);
+
+  useEffect(() => {
+    if (!coachRequest?.auto || !activeCourse || generationInProgress) return;
+    const targetMatches = activeCourse.id === coachRequest.courseId
+      || String(activeCourse.code || "").toLocaleLowerCase("en-US") === coachRequest.courseCode.toLocaleLowerCase("en-US");
+    const requestedFocus = coachRequest.focus || `Help me study ${activeCourse.code || activeCourse.name} for this semester.`;
+    const settingsReady = generationSettings.focus === requestedFocus
+      && generationSettings.questionCount === coachRequest.questions
+      && generationSettings.challenge === coachRequest.challenge;
+    if (!targetMatches || !settingsReady) return;
+    const sourceState = typeof sourceUploadStatus === "object" ? sourceUploadStatus.state : sourceUploadStatus;
+    if (["loading", "saving", "uploading"].includes(sourceState)) return;
+    const token = `${activeCourse.id}:${requestedFocus}:${coachRequest.mode}`;
+    if (coachGenerationRef.current === token) return;
+    coachGenerationRef.current = token;
+    if (!activeSourceCount) {
+      setGenerationNotice({ type: "error", text: `Add at least one readable source to ${activeCourse.name} before this scheduled knowledge check can generate questions.` });
+      setTool("sources");
+      return;
+    }
+    void generateFromSources(coachRequest.mode);
+  }, [activeCourse, activeSourceCount, coachRequest, generationInProgress, generationSettings.challenge, generationSettings.focus, generationSettings.questionCount, sourceUploadStatus]);
 
   const removeCustomDeck = () => {
     if (!activeCourse || !isImported || !window.confirm(`Remove “${activeDeck.title}” and its saved practice state from ${activeCourse.name}? This does not remove source files or other course data. This change will sync to signed-in devices.`)) return;

@@ -18,6 +18,8 @@ import { AssignmentSheet, AttendanceSheet, ScheduleSheet } from "./components/Gl
 import TaskLegend from "./components/TaskLegend";
 import { useDashboardState } from "./hooks/useDashboardState";
 import { useAssistant } from "./hooks/useAssistant";
+import { useAccountFeatures } from "./hooks/useAccountFeatures";
+import { useAssignmentFiles } from "./hooks/useAssignmentFiles";
 import { useCloudAccount } from "./hooks/useCloudAccount";
 import { useCloudAssistant } from "./hooks/useCloudAssistant";
 import { useLocalProfile } from "./hooks/useLocalProfile";
@@ -304,6 +306,12 @@ function SemesterDashboard({ onSignOut, profile }) {
   const cloudSync = useCloudSync();
   const dashboard = useDashboardState(profile.id);
   const { state } = dashboard;
+  const accountFeatures = useAccountFeatures({ client: cloudSync?.client || null, profileId: profile.id });
+  const assignmentFiles = useAssignmentFiles({
+    client: cloudSync?.client || null,
+    enabled: accountFeatures.gradeOpsEnabled,
+    profileId: profile.id,
+  });
   const semester = state.semester;
   const term = semester?.term || null;
   const semesterReady = semesterHasBoardData(semester);
@@ -650,17 +658,27 @@ function SemesterDashboard({ onSignOut, profile }) {
             <SyllabusPage cloudClient={cloudSync?.client || null} profileId={profile.id} />
           ) : activePage === "assignments" ? (
             <AssignmentDeckPage
+              academicCoach={state.academicCoach}
+              assignmentFiles={assignmentFiles.byAssignment}
+              assignmentFileStatus={assignmentFiles.status}
               assignments={effectiveAssignments}
               assignmentWorkflow={state.assignmentWorkflow}
               completed={state.completedAssignments}
               courses={courses}
+              gradeOpsEnabled={accountFeatures.gradeOpsEnabled}
+              meetings={meetings}
+              onAddAssignmentFiles={assignmentFiles.addFiles}
+              onDownloadAssignmentFile={assignmentFiles.downloadFile}
               onOpenAssignment={(assignment) => setSheet({
                 type: "assignment",
                 courseId: assignment.courseId,
                 assignmentId: assignment.id,
               })}
+              onRemoveAssignmentFile={assignmentFiles.removeFile}
+              onSaveCoachChapter={dashboard.saveAcademicCoachChapter}
               onSetSubmissionStatus={setAssignmentSubmissionStatus}
               onSetWorkStatus={setAssignmentWorkStatus}
+              onToggleCoachCheck={dashboard.saveAcademicCoachCheck}
               todayKey={todayKey}
             />
           ) : null}

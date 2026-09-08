@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Icon } from "../icons";
+import AcademicCoachPanel from "./AcademicCoachPanel";
+import { ASSIGNMENT_FILE_ACCEPT } from "../lib/assignmentFiles.js";
 import {
   assignmentSubmissionStatus,
   assignmentUrgency,
@@ -48,7 +50,49 @@ function deadlineLabel(assignment) {
   return `${formatLongDate(assignment.date)}${assignment.time ? ` · ${assignment.time}` : " · time not stated"}`;
 }
 
-function AssignmentRow({ assignment, assignmentWorkflow, completed, course, onOpen, onSetSubmissionStatus, onSetWorkStatus, todayKey }) {
+const DOCUMENT_KIND_OPTIONS = [
+  ["working-draft", "Working draft"],
+  ["study-support", "Study support"],
+  ["reference", "Reference"],
+  ["ready-for-review", "Ready for my review"],
+];
+
+function AssignmentFilePanel({ assignment, files, onAddFiles, onDownload, onRemove }) {
+  const [documentKind, setDocumentKind] = useState("working-draft");
+  const inputId = `assignment-file-${assignment.id.replace(/[^A-Za-z0-9_-]/gu, "-")}`;
+  const handleFiles = async (event) => {
+    const selected = event.target.files;
+    event.target.value = "";
+    if (!selected?.length) return;
+    await onAddFiles(selected, {
+      assignmentId: assignment.id,
+      courseId: assignment.courseId,
+      documentKind,
+    });
+  };
+  return (
+    <details className="assignment-file-panel">
+      <summary><Icon name="upload" size={15} />Assignment documents <span>{files.length}</span></summary>
+      <div className="assignment-file-panel-body">
+        <div className="assignment-file-upload-row">
+          <label><span>Document role</span><select onChange={(event) => setDocumentKind(event.target.value)} value={documentKind}>{DOCUMENT_KIND_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <input accept={ASSIGNMENT_FILE_ACCEPT} className="visually-hidden" id={inputId} multiple onChange={handleFiles} type="file" />
+          <label className="assignment-file-upload" htmlFor={inputId}><Icon name="upload" size={16} />Upload DOCX, DOC, PDF, or TXT</label>
+        </div>
+        {files.length ? <ul>{files.map((file) => (
+          <li key={file.id}>
+            <span className="assignment-file-type">{file.typeLabel}</span>
+            <div><strong>{file.fileName}</strong><small>{DOCUMENT_KIND_OPTIONS.find(([value]) => value === file.documentKind)?.[1] || "Working draft"} · {file.sizeLabel} · {file.storageScope}</small></div>
+            <button onClick={() => onDownload(file)} type="button">Download</button>
+            <button className="is-danger" onClick={() => { if (window.confirm(`Remove “${file.fileName}” from this assignment?`)) void onRemove(file); }} type="button">Remove</button>
+          </li>
+        ))}</ul> : <p>No document is attached to this assignment yet.</p>}
+      </div>
+    </details>
+  );
+}
+
+function AssignmentRow({ assignment, assignmentWorkflow, completed, course, files, onAddFiles, onDownloadFile, onOpen, onRemoveFile, onSetSubmissionStatus, onSetWorkStatus, todayKey }) {
   const workStatus = assignmentWorkStatus(assignment, completed, assignmentWorkflow);
   const submissionStatus = assignmentSubmissionStatus(assignment, assignmentWorkflow);
   const isDone = workStatus === "completed";
@@ -91,18 +135,29 @@ function AssignmentRow({ assignment, assignmentWorkflow, completed, course, onOp
         <button onClick={() => onOpen(assignment)} type="button">Details</button>
         {assignment.sourceUrl ? <a href={assignment.sourceUrl} rel="noreferrer" target="_blank">Canvas list <span aria-hidden="true">↗</span></a> : null}
       </div>
+      {Array.isArray(files) ? <AssignmentFilePanel assignment={assignment} files={files} onAddFiles={onAddFiles} onDownload={onDownloadFile} onRemove={onRemoveFile} /> : null}
     </article>
   );
 }
 
 export default function AssignmentDeckPage({
+  academicCoach,
+  assignmentFiles,
+  assignmentFileStatus,
   assignments,
   assignmentWorkflow,
   completed,
   courses,
+  gradeOpsEnabled,
+  meetings,
+  onAddAssignmentFiles,
+  onDownloadAssignmentFile,
   onOpenAssignment,
+  onRemoveAssignmentFile,
+  onSaveCoachChapter,
   onSetSubmissionStatus,
   onSetWorkStatus,
+  onToggleCoachCheck,
   todayKey,
 }) {
   const [courseFilter, setCourseFilter] = useState("all");
@@ -156,6 +211,18 @@ export default function AssignmentDeckPage({
           <p>Track whether the work is finished separately from whether you submitted it to Canvas.</p>
         </div>
       </header>
+
+      {gradeOpsEnabled ? <AcademicCoachPanel
+        assignments={assignments}
+        coachState={academicCoach}
+        courses={courses}
+        meetings={meetings}
+        onSaveChapter={onSaveCoachChapter}
+        onToggleCheck={onToggleCoachCheck}
+        todayKey={todayKey}
+      /> : null}
+
+      {gradeOpsEnabled && assignmentFileStatus?.message ? <div className={`assignment-file-status is-${assignmentFileStatus.state}`} role={assignmentFileStatus.state === "error" ? "alert" : "status"}>{assignmentFileStatus.message}</div> : null}
 
       <div className="assignment-deck-metrics" aria-label="Assignment summary">
         <article><span>Total trackable</span><strong>{summary.total}</strong></article>
@@ -233,8 +300,12 @@ export default function AssignmentDeckPage({
                     assignmentWorkflow={assignmentWorkflow}
                     completed={completed}
                     course={course}
+                    files={gradeOpsEnabled ? assignmentFiles?.[assignment.id] || [] : null}
                     key={assignment.id}
+                    onAddFiles={onAddAssignmentFiles}
+                    onDownloadFile={onDownloadAssignmentFile}
                     onOpen={onOpenAssignment}
+                    onRemoveFile={onRemoveAssignmentFile}
                     onSetSubmissionStatus={onSetSubmissionStatus}
                     onSetWorkStatus={onSetWorkStatus}
                     todayKey={todayKey}
